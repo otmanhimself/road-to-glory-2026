@@ -1,30 +1,43 @@
-const audio = new Audio('/worldcup-theme.mp3');
-audio.loop = true;
-audio.volume = 0.5;
-audio.preload = 'auto';
+let _audio: HTMLAudioElement | null = null;
 
-let _playing = false;
-let _muted = false;
+function getAudio(): HTMLAudioElement {
+  if (!_audio) {
+    // Lazy — created on first user gesture so browsers allow playback.
+    // import.meta.env.BASE_URL gives the correct public path in all environments.
+    _audio = new Audio(import.meta.env.BASE_URL + 'worldcup-theme.mp3');
+    _audio.loop = true;
+    _audio.preload = 'auto';
+  }
+  return _audio;
+}
 
 export function playTheme(): void {
-  if (_playing) return;
-  _playing = true;
-  audio.volume = _muted ? 0 : 0.5;
-  audio.play().catch(() => {
-    _playing = false;
-  });
+  try {
+    const a = getAudio();
+    if (!a.paused) return;
+    a.volume = 0.5;
+    a.play().catch(() => {/* browser blocked — user hasn't interacted yet */});
+  } catch {/* ignore */}
 }
 
 export function toggleMute(): boolean {
-  _muted = !_muted;
-  audio.volume = _muted ? 0 : 0.5;
-  return _muted;
+  try {
+    const a = getAudio();
+    if (a.volume > 0) {
+      a.volume = 0;
+      return true;
+    }
+    a.volume = 0.5;
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 export function isMuted(): boolean {
-  return _muted;
+  try { return getAudio().volume === 0; } catch { return false; }
 }
 
 export function isPlaying(): boolean {
-  return _playing;
+  try { return !getAudio().paused; } catch { return false; }
 }
