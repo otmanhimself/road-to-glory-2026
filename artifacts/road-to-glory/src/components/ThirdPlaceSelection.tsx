@@ -71,12 +71,9 @@ export function ThirdPlaceSelection({ groups, selected, onToggle, onContinue }: 
           }}
         >
           <Info size={13} className="flex-shrink-0 mt-0.5" style={{ color: 'rgba(212,175,55,0.7)' }} />
-          <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(212,175,55,0.7)' }}>
-            In the 2026 World Cup, 8 of the 12 third-place teams advance. You choose which ones qualify — just like the real selection committee.
-          </p>
+          <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(212,175,55,0.7)' }}>In the 2026 World Cup, 8 of the 12 third-place teams advance. You choose which ones qualify </p>
         </motion.div>
       </div>
-
       {/* Teams grid */}
       <div className="px-4 max-w-3xl mx-auto w-full">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -123,7 +120,6 @@ export function ThirdPlaceSelection({ groups, selected, onToggle, onContinue }: 
                 >
                   {groupId}
                 </span>
-
                 {/* Flag */}
                 <img
                   src={getFlagUrl(team)}
@@ -132,7 +128,6 @@ export function ThirdPlaceSelection({ groups, selected, onToggle, onContinue }: 
                   style={{ border: '1px solid rgba(255,255,255,0.1)' }}
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
-
                 {/* Name */}
                 <div className="flex flex-col min-w-0 flex-1">
                   <span
@@ -145,7 +140,6 @@ export function ThirdPlaceSelection({ groups, selected, onToggle, onContinue }: 
                     Group {groupId} — 3rd Place
                   </span>
                 </div>
-
                 {/* Selection indicator */}
                 <AnimatePresence>
                   {isSelected && (
@@ -165,7 +159,6 @@ export function ThirdPlaceSelection({ groups, selected, onToggle, onContinue }: 
           })}
         </div>
       </div>
-
       {/* Sticky bottom bar */}
       <div
         className="fixed bottom-0 left-0 right-0 z-50"
