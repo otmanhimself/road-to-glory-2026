@@ -1,0 +1,93 @@
+You are updating an existing web app called "Road to Glory 2026". Do NOT rebuild from scratch.
+
+GOAL:
+Replace the trophy emoji (🏆) with a real trophy image uploaded by the user and keep the same premium animations across the app and in exported images.
+
+---
+
+FEATURE: REAL TROPHY IMAGE SUPPORT
+
+1. Allow using a real trophy image instead of emoji:
+- Add support for /public/trophy.png (or any uploaded image)
+- Replace ALL instances of 🏆 emoji with:
+  <img src="/trophy.png" class="trophy" />
+
+2. Ensure the image is used in:
+- Champion reveal screen
+- Final winner section
+- Share image (html2canvas output)
+
+---
+
+ANIMATION (KEEP SAME EFFECTS AS BEFORE):
+
+Apply identical premium animation to the image:
+
+.trophy {
+  width: 120px;
+  animation:
+    float 3s ease-in-out infinite,
+    glow 2s ease-in-out infinite,
+    appear 0.6s ease-out;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes glow {
+  0% { filter: drop-shadow(0 0 5px #D4AF37); }
+  50% { filter: drop-shadow(0 0 25px #D4AF37); }
+  100% { filter: drop-shadow(0 0 5px #D4AF37); }
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+---
+
+IMPORTANT RULES:
+
+- Do NOT use emoji trophy anywhere anymore
+- Always use the image instead
+- Keep animations smooth and consistent across mobile and desktop
+
+---
+
+IMAGE EXPORT FIX (VERY IMPORTANT):
+
+- Ensure trophy image is included in html2canvas capture
+- Use:
+  html2canvas(container, {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: "#0B0B0F"
+  });
+
+- Make sure trophy is fully visible in exported PNG
+
+---
+
+OPTIONAL UPGRADE:
+
+If no image is uploaded:
+- Show fallback animated emoji 🏆
+
+If image exists:
+- Always prioritize image over emoji
+
+---
+
+RESULT:
+
+The final winner screen must display a real trophy image with premium animation and it must appear correctly in both the live UI and exported share image.

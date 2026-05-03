@@ -167,6 +167,7 @@ export function UsernameEntry({ onStart, savedProgress, onResume, onStartFresh }
           <img
             src="/trophy.png"
             alt="World Cup Trophy"
+            crossOrigin="anonymous"
             className="trophy-img-glow"
             style={{ width: 80, height: 108, objectFit: 'contain' }}
           />

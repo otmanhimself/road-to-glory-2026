@@ -179,6 +179,7 @@ export function ChampionReveal({ champion, knockout, username = '' }: ChampionRe
             <img
               src="/trophy.png"
               alt="World Cup Trophy"
+              crossOrigin="anonymous"
               className="trophy-img-glow"
               style={{ width: 110, height: 148, objectFit: 'contain' }}
             />

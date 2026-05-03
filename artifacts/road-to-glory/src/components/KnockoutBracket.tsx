@@ -306,6 +306,7 @@ export function KnockoutBracket({ state, onAdvanceTeam }: KnockoutBracketProps) 
                       style={{ background: 'radial-gradient(circle at 50% 20%, rgba(212,175,55,0.14) 0%, transparent 70%)' }} />
                     <img
                       src="/trophy.png"
+                      crossOrigin="anonymous"
                       alt="Trophy"
                       className="trophy-img-glow relative z-10"
                       style={{ width: 28, height: 38, objectFit: 'contain' }}
