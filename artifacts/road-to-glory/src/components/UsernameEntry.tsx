@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RotateCcw, ChevronRight } from 'lucide-react';
+import { useCountdown } from '@/hooks/useCountdown';
 
 interface SavedProgress {
   username: string;
@@ -26,6 +27,93 @@ function phaseLabel(phase: number, groupsDone: number): string {
   if (phase === 3) return 'Best 3rd-Place Selection';
   if (phase === 4) return 'Knockout Bracket';
   return 'In progress';
+}
+
+function CountdownUnit({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div
+        className="relative flex items-center justify-center rounded-xl font-black tabular-nums"
+        style={{
+          width: 64,
+          height: 64,
+          fontSize: 30,
+          background: 'linear-gradient(160deg, rgba(212,175,55,0.13) 0%, rgba(212,175,55,0.05) 100%)',
+          border: '1px solid rgba(212,175,55,0.22)',
+          color: '#F0D060',
+          boxShadow: '0 0 18px rgba(212,175,55,0.1), inset 0 1px 0 rgba(212,175,55,0.12)',
+          letterSpacing: '-0.02em',
+        }}
+      >
+        {String(value).padStart(2, '0')}
+      </div>
+      <span
+        className="text-[10px] font-semibold uppercase tracking-[0.18em]"
+        style={{ color: 'rgba(212,175,55,0.4)' }}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function CountdownSeparator() {
+  return (
+    <span
+      className="font-black text-2xl pb-5 select-none"
+      style={{ color: 'rgba(212,175,55,0.3)' }}
+    >
+      :
+    </span>
+  );
+}
+
+function Countdown() {
+  const { days, hours, minutes, seconds, total } = useCountdown();
+
+  if (total <= 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="text-sm font-bold tracking-widest uppercase"
+        style={{ color: '#D4AF37' }}
+      >
+        ⚽ The World Cup has kicked off!
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.55, duration: 0.6 }}
+      className="flex flex-col items-center gap-3"
+    >
+      <p
+        className="text-[11px] font-semibold uppercase tracking-[0.22em]"
+        style={{ color: 'rgba(212,175,55,0.38)' }}
+      >
+        Kicks off in
+      </p>
+      <div className="flex items-end gap-2">
+        <CountdownUnit value={days} label="Days" />
+        <CountdownSeparator />
+        <CountdownUnit value={hours} label="Hrs" />
+        <CountdownSeparator />
+        <CountdownUnit value={minutes} label="Min" />
+        <CountdownSeparator />
+        <CountdownUnit value={seconds} label="Sec" />
+      </div>
+      <p
+        className="text-[10px] font-medium tracking-widest uppercase"
+        style={{ color: 'rgba(212,175,55,0.25)' }}
+      >
+        Jun 11 · MetLife Stadium
+      </p>
+    </motion.div>
+  );
 }
 
 export function UsernameEntry({ onStart, savedProgress, onResume, onStartFresh }: UsernameEntryProps) {
@@ -104,6 +192,9 @@ export function UsernameEntry({ onStart, savedProgress, onResume, onStartFresh }
             World Cup Prediction Bracket
           </motion.p>
         </div>
+
+        {/* Live countdown to opening match */}
+        <Countdown />
 
         <AnimatePresence mode="wait">
           {/* Resume card — shown when saved progress exists and user hasn't chosen "Start Fresh" */}
