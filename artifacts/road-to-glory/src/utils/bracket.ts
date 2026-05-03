@@ -36,31 +36,106 @@ export const initialKnockoutState: BracketState['knockout'] = {
   champion: null,
 };
 
+// Canonical group order used throughout
+const GROUP_ORDER = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+
+interface TeamEntry { name: string; group: string; }
+
+/**
+ * Generates the Round of 32 following FIFA-style rules:
+ *
+ * RULE 1 — No same-group matches in R32.
+ *   Guaranteed by pairing each winner[i] with runnerUp[(i + 6) % 12].
+ *   Shifting by exactly half the group count (6 of 12) means the group indices
+ *   never overlap: winner[A]=0 → runnerUp[G]=6, winner[G]=6 → runnerUp[A]=0, etc.
+ *
+ * RULE 2 — Structured matchmaking, not random.
+ *   Winners A–F are seeded on the left half of the bracket (matches 0–5).
+ *   Winners G–L are seeded on the right half (matches 8–13).
+ *   Third-place teams fill the remaining slots (2 per half).
+ *
+ * RULE 3 — Third-place teams are always from different groups.
+ *   Each selected third is the unique 3rd-place finisher of its group, so
+ *   any pairing of thirds is automatically cross-group.
+ */
 export const generateR32 = (
   groups: Record<string, GroupSelection>,
   selectedThirdPlace: string[]
 ): Match[] => {
-  const g = groups;
-  const t = selectedThirdPlace;
+  // Build team arrays in canonical group order
+  const winners: TeamEntry[] = GROUP_ORDER.map(id => ({
+    name: groups[id]?.first || '',
+    group: id,
+  }));
+  const runnersUp: TeamEntry[] = GROUP_ORDER.map(id => ({
+    name: groups[id]?.second || '',
+    group: id,
+  }));
+
+  // Build a group-lookup map for third-place teams
+  const teamToGroup: Record<string, string> = {};
+  GROUP_ORDER.forEach(id => {
+    const g = groups[id];
+    if (g?.first)  teamToGroup[g.first]  = id;
+    if (g?.second) teamToGroup[g.second] = id;
+    if (g?.third)  teamToGroup[g.third]  = id;
+  });
+  const thirds: TeamEntry[] = selectedThirdPlace.map(name => ({
+    name,
+    group: teamToGroup[name] || '?',
+  }));
+
+  // --- Pair winners with runners-up ---
+  // Shift index by 6: winner[i].group ≠ runnersUp[(i+6)%12].group for all i
+  const winnerMatches: Match[] = winners.map((w, i) => ({
+    team1: w.name,
+    team2: runnersUp[(i + 6) % 12].name,
+    winner: null,
+  }));
+
+  // --- Pair third-place teams ---
+  // Each third is from a unique group so any pairing is cross-group
+  const thirdMatches: Match[] = [
+    { team1: thirds[0]?.name || '', team2: thirds[1]?.name || '', winner: null },
+    { team1: thirds[2]?.name || '', team2: thirds[3]?.name || '', winner: null },
+    { team1: thirds[4]?.name || '', team2: thirds[5]?.name || '', winner: null },
+    { team1: thirds[6]?.name || '', team2: thirds[7]?.name || '', winner: null },
+  ];
+
+  // --- Validate: assert no same-group collision exists ---
+  // (Safety net — the algorithm above makes this impossible, but log if it ever fires)
+  const allMatches = [...winnerMatches, ...thirdMatches];
+  allMatches.forEach((m, idx) => {
+    const g1 = teamToGroup[m.team1];
+    const g2 = teamToGroup[m.team2];
+    if (g1 && g2 && g1 === g2) {
+      console.warn(`[bracket] R32 match ${idx} has same-group teams: ${m.team1} vs ${m.team2} (Group ${g1})`);
+    }
+  });
+
+  // --- Arrange into 16 bracket slots ---
+  //
+  // LEFT half  (slots 0–7):  Winners A–F + 2 thirds matches
+  //   slot 0: W_A vs RU_G   slot 1: W_B vs RU_H
+  //   slot 2: W_C vs RU_I   slot 3: W_D vs RU_J
+  //   slot 4: W_E vs RU_K   slot 5: W_F vs RU_L
+  //   slot 6: Third[0] vs Third[1]
+  //   slot 7: Third[2] vs Third[3]
+  //
+  // RIGHT half (slots 8–15): Winners G–L + 2 thirds matches
+  //   slot  8: W_G vs RU_A   slot  9: W_H vs RU_B
+  //   slot 10: W_I vs RU_C   slot 11: W_J vs RU_D
+  //   slot 12: W_K vs RU_E   slot 13: W_L vs RU_F
+  //   slot 14: Third[4] vs Third[5]
+  //   slot 15: Third[6] vs Third[7]
+  //
   return [
-    // Left side — matches 0-7
-    { team1: g['A']?.first || '', team2: g['B']?.second || '', winner: null },  // 0
-    { team1: g['C']?.first || '', team2: g['D']?.second || '', winner: null },  // 1
-    { team1: g['E']?.first || '', team2: g['F']?.second || '', winner: null },  // 2
-    { team1: g['G']?.first || '', team2: g['H']?.second || '', winner: null },  // 3
-    { team1: g['I']?.first || '', team2: g['J']?.second || '', winner: null },  // 4
-    { team1: g['K']?.first || '', team2: g['L']?.second || '', winner: null },  // 5
-    { team1: t[0] || '', team2: t[1] || '', winner: null },                     // 6
-    { team1: t[2] || '', team2: t[3] || '', winner: null },                     // 7
-    // Right side — matches 8-15
-    { team1: g['B']?.first || '', team2: g['A']?.second || '', winner: null },  // 8
-    { team1: g['D']?.first || '', team2: g['C']?.second || '', winner: null },  // 9
-    { team1: g['F']?.first || '', team2: g['E']?.second || '', winner: null },  // 10
-    { team1: g['H']?.first || '', team2: g['G']?.second || '', winner: null },  // 11
-    { team1: g['J']?.first || '', team2: g['I']?.second || '', winner: null },  // 12
-    { team1: g['L']?.first || '', team2: g['K']?.second || '', winner: null },  // 13
-    { team1: t[4] || '', team2: t[5] || '', winner: null },                     // 14
-    { team1: t[6] || '', team2: t[7] || '', winner: null },                     // 15
+    ...winnerMatches.slice(0, 6),   // slots 0–5
+    thirdMatches[0],                 // slot 6
+    thirdMatches[1],                 // slot 7
+    ...winnerMatches.slice(6, 12),  // slots 8–13
+    thirdMatches[2],                 // slot 14
+    thirdMatches[3],                 // slot 15
   ];
 };
 
@@ -77,7 +152,7 @@ export const updateKnockoutRounds = (
 ): BracketState['knockout'] => {
   const k = { ...knockout };
 
-  // R32 → R16
+  // R32 → R16: adjacent pairs of R32 matches feed one R16 match
   k.r16 = Array.from({ length: 8 }, (_, i) => {
     const updated: Match = {
       team1: k.r32[i * 2]?.winner || '',
