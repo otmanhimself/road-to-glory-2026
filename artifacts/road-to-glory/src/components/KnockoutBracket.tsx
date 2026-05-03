@@ -4,6 +4,122 @@ import { MatchBox } from './MatchBox';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChampionReveal } from './ChampionReveal';
 
+function usePortraitMobile() {
+  const [isPortraitMobile, setIsPortraitMobile] = useState(false);
+  useEffect(() => {
+    const check = () => {
+      const mobile = window.innerWidth < 768 || ('ontouchstart' in window && window.innerWidth < 1024);
+      const portrait = window.innerHeight > window.innerWidth;
+      setIsPortraitMobile(mobile && portrait);
+    };
+    check();
+    window.addEventListener('resize', check);
+    window.screen?.orientation?.addEventListener?.('change', check);
+    return () => {
+      window.removeEventListener('resize', check);
+      window.screen?.orientation?.removeEventListener?.('change', check);
+    };
+  }, []);
+  return isPortraitMobile;
+}
+
+function RotateButton() {
+  const isPortraitMobile = usePortraitMobile();
+  const [hint, setHint] = useState(false);
+  const [spinning, setSpinning] = useState(false);
+
+  const handleRotate = async () => {
+    setSpinning(true);
+    setTimeout(() => setSpinning(false), 700);
+    try {
+      await (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> }).lock?.('landscape');
+    } catch {
+      // iOS/desktop: show a manual hint instead
+      setHint(true);
+      setTimeout(() => setHint(false), 3000);
+    }
+  };
+
+  if (!isPortraitMobile) return null;
+
+  return (
+    <>
+      <motion.button
+        onClick={handleRotate}
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        title="Rotate to landscape"
+        style={{
+          position: 'fixed',
+          bottom: 80,
+          right: 16,
+          zIndex: 200,
+          width: 46,
+          height: 46,
+          borderRadius: '50%',
+          background: 'rgba(18,16,22,0.92)',
+          border: '1px solid rgba(212,175,55,0.45)',
+          boxShadow: '0 0 0 4px rgba(212,175,55,0.07), 0 0 18px rgba(212,175,55,0.18)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+        }}
+        whileTap={{ scale: 0.88 }}
+        whileHover={{ scale: 1.08 }}
+      >
+        <motion.svg
+          width="20" height="20" viewBox="0 0 24 24"
+          fill="none" stroke="#D4AF37" strokeWidth="2"
+          strokeLinecap="round" strokeLinejoin="round"
+          animate={spinning ? { rotate: 90 } : { rotate: 0 }}
+          transition={{ type: 'spring', stiffness: 280, damping: 18 }}
+        >
+          {/* Phone outline rotated */}
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+          <line x1="12" y1="18" x2="12.01" y2="18" />
+          {/* Curved rotation arrow */}
+          <path d="M9 2.5 A6 6 0 0 1 15 2.5" strokeDasharray="3 2" />
+        </motion.svg>
+      </motion.button>
+
+      {/* Manual hint for iOS */}
+      <AnimatePresence>
+        {hint && (
+          <motion.div
+            key="hint"
+            initial={{ opacity: 0, y: 8, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 8, x: '-50%' }}
+            style={{
+              position: 'fixed',
+              bottom: 136,
+              left: '50%',
+              zIndex: 210,
+              background: 'rgba(18,16,22,0.95)',
+              border: '1px solid rgba(212,175,55,0.35)',
+              borderRadius: 12,
+              padding: '8px 16px',
+              fontSize: 12,
+              fontWeight: 600,
+              color: 'rgba(255,255,255,0.8)',
+              whiteSpace: 'nowrap',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+              pointerEvents: 'none',
+            }}
+          >
+            📱 Rotate your phone for the full bracket
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
 const SLOT_H = 96;
 const TOTAL_H = 8 * SLOT_H; // 768px — total height of bracket
 const MATCH_W = 152;
@@ -204,6 +320,7 @@ export function KnockoutBracket({ state, onAdvanceTeam }: KnockoutBracketProps) 
 
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+      <RotateButton />
 
       {/* Title */}
       <div className="text-center pt-6 pb-3 px-4">
