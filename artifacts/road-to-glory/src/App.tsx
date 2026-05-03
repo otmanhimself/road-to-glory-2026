@@ -98,21 +98,28 @@ const defaultState = (): BracketState => ({
   knockout: initialKnockoutState,
 });
 
-const loadSavedState = (): BracketState => {
+// Returns the saved state if it contains meaningful progress, otherwise null
+const loadSavedProgress = (): BracketState | null => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaultState();
+    if (!raw) return null;
     const parsed = JSON.parse(raw) as BracketState;
-    // Validate basic shape before trusting it
-    if (!parsed.phase || !parsed.groups || !parsed.knockout) return defaultState();
-    return parsed;
+    if (!parsed.phase || !parsed.groups || !parsed.knockout) return null;
+    const hasProgress =
+      parsed.phase > 1 ||
+      Object.values(parsed.groups).some(g => g.first !== null);
+    return hasProgress ? parsed : null;
   } catch {
-    return defaultState();
+    return null;
   }
 };
 
 function RoadToGloryApp() {
-  const [state, setState] = useState<BracketState>(loadSavedState);
+  // Always start at the landing screen (phase 1) so the resume choice is shown
+  const [state, setState] = useState<BracketState>(defaultState);
+
+  // Saved progress snapshot — captured once on mount, never changes after
+  const [savedProgress] = useState<BracketState | null>(loadSavedProgress);
 
   // Persist every state change to localStorage
   useEffect(() => {
@@ -127,6 +134,17 @@ function RoadToGloryApp() {
 
   const handleStart = (username: string) => {
     setState(prev => ({ ...prev, username, phase: 2 }));
+  };
+
+  // Restore the saved bracket exactly where the user left off
+  const handleResume = () => {
+    if (savedProgress) setState(savedProgress);
+  };
+
+  // Wipe storage and go to the username form as a fresh start
+  const handleStartFresh = () => {
+    try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+    setState(defaultState());
   };
 
   const handleGroupSelect = (groupId: string, team: string) => {
@@ -232,7 +250,18 @@ function RoadToGloryApp() {
       <AnimatePresence mode="wait">
         {state.phase === 1 && (
           <motion.div key="phase-1" exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.25 }}>
-            <UsernameEntry onStart={handleStart} />
+            <UsernameEntry
+              onStart={handleStart}
+              savedProgress={savedProgress ? {
+                username: savedProgress.username,
+                phase: savedProgress.phase,
+                groupsDone: Object.values(savedProgress.groups).filter(
+                  g => g.first && g.second && g.third
+                ).length,
+              } : undefined}
+              onResume={handleResume}
+              onStartFresh={handleStartFresh}
+            />
           </motion.div>
         )}
 
