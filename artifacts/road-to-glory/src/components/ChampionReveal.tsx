@@ -75,27 +75,6 @@ function getChampionPath(champion: string, knockout: BracketState['knockout']): 
   });
 }
 
-function buildShareText(champion: string, path: PathStep[], username: string): string {
-  const header = `🏆 I picked ${champion} to win the #WorldCup2026!\n\nMy Road to Glory:`;
-  const steps = path.map((s, i) =>
-    i === path.length - 1
-      ? `🏆 ${s.fullLabel} → beat ${s.opponent}`
-      : `${s.label} → beat ${s.opponent}`
-  ).join('\n');
-  const footer = username
-    ? `— @${username} on Road to Glory 2026`
-    : 'Road to Glory 2026';
-  const url = typeof window !== 'undefined' ? window.location.origin : '';
-  return `${header}\n${steps}\n\n${footer}\n${url}\n\n#RoadToGlory2026`;
-}
-
-function XIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="currentColor">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.259 5.63 5.905-5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-    </svg>
-  );
-}
 
 interface ChampionRevealProps {
   champion: string | null;
@@ -365,43 +344,6 @@ export function ChampionReveal({ champion, knockout, username = '' }: ChampionRe
             </motion.div>
           )}
 
-          {/* ── SHARE BUTTONS ── */}
-          {champion && (
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: path.length > 0 ? 1.35 + path.length * 0.12 + 0.3 : 1.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-              className="relative z-10 mt-8 flex flex-col items-center gap-3"
-            >
-              <div className="flex items-center gap-3">
-                {/* Share on X */}
-                <a
-                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(buildShareText(champion, path, username))}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-5 py-3 rounded-xl font-black text-sm uppercase tracking-widest transition-all duration-200 hover:scale-[1.04] hover:brightness-110 active:scale-95 select-none"
-                  style={{
-                    background: '#000000',
-                    color: '#ffffff',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    boxShadow: '0 0 20px rgba(0,0,0,0.6), 0 4px 14px rgba(0,0,0,0.5)',
-                    letterSpacing: '0.1em',
-                  }}
-                >
-                  <XIcon />
-                  Share on X
-                </a>
-
-              </div>
-
-              <p
-                className="text-[10px] font-medium tracking-widest uppercase"
-                style={{ color: 'rgba(255,255,255,0.18)' }}
-              >
-                Share your prediction
-              </p>
-            </motion.div>
-          )}
 
           {/* Bottom divider */}
           <motion.div
