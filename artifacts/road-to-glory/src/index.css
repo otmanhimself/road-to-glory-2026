@@ -68,91 +68,236 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* Base definitions */
 :root {
-  /* Using dark mode as default since the app is dark */
-  --background: 226 44% 7%; /* #0a0e1a */
-  --foreground: 210 40% 98%;
+  /* Deep dark background */
+  --background: 240 10% 4%;
+  --foreground: 43 20% 95%;
 
-  --card: 226 44% 10%;
-  --card-foreground: 210 40% 98%;
-  --card-border: 226 40% 15%;
+  --card: 240 10% 7%;
+  --card-foreground: 43 20% 95%;
+  --card-border: 240 8% 14%;
 
-  --popover: 226 44% 10%;
-  --popover-foreground: 210 40% 98%;
-  --popover-border: 226 40% 15%;
+  --popover: 240 10% 7%;
+  --popover-foreground: 43 20% 95%;
+  --popover-border: 240 8% 14%;
 
-  /* Neon Green */
-  --primary: 111 100% 54%; /* #39FF14 */
-  --primary-foreground: 226 44% 7%;
+  /* Premium Gold */
+  --primary: 43 74% 52%;
+  --primary-foreground: 240 10% 4%;
 
-  --secondary: 226 30% 20%;
-  --secondary-foreground: 210 40% 98%;
+  --secondary: 240 8% 14%;
+  --secondary-foreground: 43 20% 95%;
 
-  --muted: 226 30% 15%;
-  --muted-foreground: 215 20.2% 65.1%;
+  --muted: 240 8% 10%;
+  --muted-foreground: 240 5% 55%;
 
-  --accent: 111 100% 54%; /* #39FF14 */
-  --accent-foreground: 226 44% 7%;
+  --accent: 43 74% 52%;
+  --accent-foreground: 240 10% 4%;
 
   --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
+  --destructive-foreground: 43 20% 95%;
 
-  --border: 226 40% 15%;
-  --input: 226 40% 20%;
-  --ring: 111 100% 54%;
+  --border: 240 8% 14%;
+  --input: 240 8% 12%;
+  --ring: 43 74% 52%;
+
+  --chart-1: 43 74% 52%;
+  --chart-2: 43 60% 40%;
+  --chart-3: 240 10% 30%;
+  --chart-4: 0 62% 50%;
+  --chart-5: 200 80% 50%;
+
+  --sidebar: 240 10% 6%;
+  --sidebar-foreground: 43 20% 95%;
+  --sidebar-border: 240 8% 14%;
+  --sidebar-primary: 43 74% 52%;
+  --sidebar-primary-foreground: 240 10% 4%;
+  --sidebar-accent: 240 8% 12%;
+  --sidebar-accent-foreground: 43 20% 95%;
+  --sidebar-ring: 43 74% 52%;
 
   --app-font-sans: 'Inter', sans-serif;
   --app-font-display: 'Orbitron', sans-serif;
   --app-font-serif: Georgia, serif;
   --app-font-mono: Menlo, monospace;
-  
+
   --radius: 0.75rem;
+
+  --gold: #D4AF37;
+  --gold-light: #F0D060;
+  --gold-dark: #A08020;
 }
 
 .dark {
-  --background: 226 44% 7%; /* #0a0e1a */
-  --foreground: 210 40% 98%;
-
-  --card: 226 44% 10%;
-  --card-foreground: 210 40% 98%;
-  --card-border: 226 40% 15%;
-
-  --popover: 226 44% 10%;
-  --popover-foreground: 210 40% 98%;
-  --popover-border: 226 40% 15%;
-
-  --primary: 111 100% 54%;
-  --primary-foreground: 226 44% 7%;
-
-  --secondary: 226 30% 20%;
-  --secondary-foreground: 210 40% 98%;
-
-  --muted: 226 30% 15%;
-  --muted-foreground: 215 20.2% 65.1%;
-
-  --accent: 111 100% 54%;
-  --accent-foreground: 226 44% 7%;
-
+  --background: 240 10% 4%;
+  --foreground: 43 20% 95%;
+  --card: 240 10% 7%;
+  --card-foreground: 43 20% 95%;
+  --card-border: 240 8% 14%;
+  --popover: 240 10% 7%;
+  --popover-foreground: 43 20% 95%;
+  --popover-border: 240 8% 14%;
+  --primary: 43 74% 52%;
+  --primary-foreground: 240 10% 4%;
+  --secondary: 240 8% 14%;
+  --secondary-foreground: 43 20% 95%;
+  --muted: 240 8% 10%;
+  --muted-foreground: 240 5% 55%;
+  --accent: 43 74% 52%;
+  --accent-foreground: 240 10% 4%;
   --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-
-  --border: 226 40% 15%;
-  --input: 226 40% 20%;
-  --ring: 111 100% 54%;
+  --destructive-foreground: 43 20% 95%;
+  --border: 240 8% 14%;
+  --input: 240 8% 12%;
+  --ring: 43 74% 52%;
 }
 
 @layer base {
   * {
     @apply border-border;
   }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     @apply font-sans antialiased bg-background text-foreground;
-    /* subtle stadium background */
-    background-image: radial-gradient(circle at 50% -20%, rgba(57, 255, 20, 0.1), transparent 60%),
-                      radial-gradient(circle at 50% 120%, rgba(57, 255, 20, 0.05), transparent 60%);
+    background-image:
+      radial-gradient(ellipse 80% 40% at 50% -10%, rgba(212, 175, 55, 0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 30% at 50% 110%, rgba(212, 175, 55, 0.04) 0%, transparent 70%),
+      radial-gradient(ellipse 100% 100% at 50% 50%, rgba(10, 8, 20, 0.9) 0%, transparent 100%);
+    overflow-x: hidden;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-display tracking-wider;
   }
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* ============ CHAMPION GLOW ANIMATIONS ============ */
+@keyframes champion-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 20px rgba(212, 175, 55, 0.4),
+      0 0 60px rgba(212, 175, 55, 0.2),
+      0 0 120px rgba(212, 175, 55, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 30px rgba(212, 175, 55, 0.7),
+      0 0 80px rgba(212, 175, 55, 0.4),
+      0 0 160px rgba(212, 175, 55, 0.2);
+  }
+}
+
+@keyframes trophy-float {
+  0%, 100% { transform: translateY(0px) rotate(-2deg); }
+  50% { transform: translateY(-8px) rotate(2deg); }
+}
+
+@keyframes gold-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes particle-float {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(-120px) rotate(720deg); opacity: 0; }
+}
+
+@keyframes spotlight-sweep {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+@keyframes bracket-line-draw {
+  from { stroke-dashoffset: 200; }
+  to { stroke-dashoffset: 0; }
+}
+
+.champion-glow {
+  animation: champion-pulse 2.5s ease-in-out infinite;
+}
+
+.trophy-float {
+  animation: trophy-float 3s ease-in-out infinite;
+}
+
+.gold-shimmer-text {
+  background: linear-gradient(
+    90deg,
+    #D4AF37 0%,
+    #F0D060 30%,
+    #fff8dc 50%,
+    #F0D060 70%,
+    #D4AF37 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gold-shimmer 3s linear infinite;
+}
+
+.spotlight {
+  animation: spotlight-sweep 4s ease-in-out infinite;
+}
+
+/* ============ GLASSMORPHISM ============ */
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 175, 55, 0.12);
+}
+
+.glass-card-hover {
+  transition: all 0.3s ease;
+}
+.glass-card-hover:hover {
+  background: rgba(212, 175, 55, 0.05);
+  border-color: rgba(212, 175, 55, 0.25);
+  transform: translateY(-1px);
+}
+
+/* ============ BRACKET LINES ============ */
+.bracket-line {
+  stroke: rgba(212, 175, 55, 0.25);
+  stroke-width: 1.5;
+  fill: none;
+  stroke-dasharray: 200;
+  stroke-dashoffset: 0;
+}
+
+/* ============ MOBILE TOUCH TARGETS ============ */
+@media (max-width: 768px) {
+  button {
+    min-height: 44px;
+  }
+}
+
+/* ============ SCROLLBAR ============ */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.4);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.7);
+}
+
+/* ============ CONFETTI PARTICLES ============ */
+.confetti-particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  animation: particle-float linear forwards;
 }

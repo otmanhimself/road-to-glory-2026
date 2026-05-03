@@ -1,180 +1,358 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { BracketState } from '@/utils/bracket';
 import { MatchBox } from './MatchBox';
-import { Trophy } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Trophy, Medal } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface KnockoutBracketProps {
   state: BracketState;
   onAdvanceTeam: (round: keyof BracketState['knockout'], matchIndex: number, team: string) => void;
 }
 
-export function KnockoutBracket({ state, onAdvanceTeam }: KnockoutBracketProps) {
-  const { r16, qf, sf, final, thirdPlace, champion } = state.knockout;
+interface Particle {
+  id: number;
+  x: number;
+  color: string;
+  duration: number;
+  delay: number;
+  size: number;
+}
+
+function ChampionConfetti() {
+  const [particles, setParticles] = useState<Particle[]>([]);
+
+  useEffect(() => {
+    const colors = ['#D4AF37', '#F0D060', '#fff8dc', '#C0A030', '#FFE066', '#ffffff'];
+    const generated: Particle[] = Array.from({ length: 28 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      duration: 1.8 + Math.random() * 1.5,
+      delay: Math.random() * 1.2,
+      size: 5 + Math.random() * 7,
+    }));
+    setParticles(generated);
+    const timer = setTimeout(() => setParticles([]), 4000);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
-    <div className="min-h-[100dvh] flex flex-col p-4">
-      <div className="w-full max-w-[1400px] mx-auto mb-8 text-center mt-4">
-        <h2 className="text-3xl md:text-5xl font-black text-primary uppercase tracking-widest font-display">
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          className="confetti-particle absolute bottom-0"
+          style={{
+            left: `${p.x}%`,
+            width: p.size,
+            height: p.size,
+            background: p.color,
+            animationDuration: `${p.duration}s`,
+            animationDelay: `${p.delay}s`,
+            borderRadius: Math.random() > 0.5 ? '50%' : '2px',
+            transform: `rotate(${Math.random() * 360}deg)`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function RoundLabel({ label }: { label: string }) {
+  return (
+    <div
+      className="text-center mb-3 px-3 py-1.5 rounded-lg text-[10px] font-black tracking-[0.2em] uppercase w-full"
+      style={{
+        background: 'rgba(212,175,55,0.07)',
+        border: '1px solid rgba(212,175,55,0.15)',
+        color: 'rgba(212,175,55,0.7)',
+      }}
+    >
+      {label}
+    </div>
+  );
+}
+
+export function KnockoutBracket({ state, onAdvanceTeam }: KnockoutBracketProps) {
+  const { r16, qf, sf, final, thirdPlace, champion } = state.knockout;
+  const [showConfetti, setShowConfetti] = useState(false);
+  const prevChampion = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (champion && champion !== prevChampion.current) {
+      setShowConfetti(true);
+      prevChampion.current = champion;
+      const t = setTimeout(() => setShowConfetti(false), 4500);
+      return () => clearTimeout(t);
+    }
+  }, [champion]);
+
+  const matchGap = 'gap-3';
+
+  return (
+    <div className="min-h-[100dvh] flex flex-col">
+      {/* Title */}
+      <div className="text-center pt-6 pb-4 px-4">
+        <h2
+          className="text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-widest font-display"
+          style={{ color: '#D4AF37' }}
+        >
           Knockout Stage
         </h2>
+        <p className="text-xs text-muted-foreground mt-1 tracking-widest uppercase">
+          Click a team to advance them
+        </p>
       </div>
 
-      <div className="flex-1 w-full overflow-x-auto pb-12">
-        <div className="min-w-[1200px] w-full flex justify-between px-8 relative">
-          
-          {/* Round of 16 - Left */}
-          <div className="flex flex-col justify-around gap-4 py-8">
-            {r16.slice(0, 6).map((match, i) => (
-              <MatchBox
-                key={`r16-l-${i}`}
-                matchId={`r16-${i}`}
-                {...match}
-                onSelect={(team) => onAdvanceTeam('r16', i, team)}
-              />
-            ))}
+      {/* Bracket — horizontally scrollable */}
+      <div className="flex-1 overflow-x-auto pb-8 px-4">
+        <div
+          className="flex items-stretch justify-start md:justify-center gap-0 min-w-max"
+          style={{ minHeight: '700px' }}
+        >
+
+          {/* ===== R16 LEFT (matches 0-5) ===== */}
+          <div className="flex flex-col w-[172px]">
+            <RoundLabel label="Round of 16" />
+            <div className={`flex flex-col ${matchGap} flex-1 justify-around py-2`}>
+              {r16.slice(0, 6).map((match, i) => (
+                <MatchBox
+                  key={`r16-l-${i}`}
+                  matchId={`r16-${i}`}
+                  {...match}
+                  onSelect={(team) => onAdvanceTeam('r16', i, team)}
+                />
+              ))}
+            </div>
           </div>
 
-          {/* QF - Left */}
-          <div className="flex flex-col justify-around gap-12 py-16">
-            {qf.slice(0, 3).map((match, i) => (
-              <MatchBox
-                key={`qf-l-${i}`}
-                matchId={`qf-${i}`}
-                {...match}
-                onSelect={(team) => onAdvanceTeam('qf', i, team)}
-              />
-            ))}
+          {/* Connector: R16 left → QF left */}
+          <BracketConnector count={6} pairTo={3} />
+
+          {/* ===== QF LEFT (matches 0-2) ===== */}
+          <div className="flex flex-col w-[172px]">
+            <RoundLabel label="Quarterfinals" />
+            <div className={`flex flex-col ${matchGap} flex-1 justify-around py-2`}>
+              {qf.slice(0, 3).map((match, i) => (
+                <MatchBox
+                  key={`qf-l-${i}`}
+                  matchId={`qf-${i}`}
+                  {...match}
+                  onSelect={(team) => onAdvanceTeam('qf', i, team)}
+                />
+              ))}
+            </div>
           </div>
 
-          {/* SF - Left */}
-          <div className="flex flex-col justify-around gap-24 py-32">
-            {sf.slice(0, 2).map((match, i) => (
-              <MatchBox
-                key={`sf-l-${i}`}
-                matchId={`sf-${i}`}
-                {...match}
-                onSelect={(team) => onAdvanceTeam('sf', i, team)}
-              />
-            ))}
+          {/* Connector: QF left → SF left */}
+          <BracketConnector count={3} pairTo={2} />
+
+          {/* ===== SF LEFT (matches 0-1) ===== */}
+          <div className="flex flex-col w-[172px]">
+            <RoundLabel label="Semifinals" />
+            <div className={`flex flex-col ${matchGap} flex-1 justify-around py-2`}>
+              {sf.slice(0, 2).map((match, i) => (
+                <MatchBox
+                  key={`sf-l-${i}`}
+                  matchId={`sf-${i}`}
+                  {...match}
+                  onSelect={(team) => onAdvanceTeam('sf', i, team)}
+                />
+              ))}
+            </div>
           </div>
 
-          {/* Final & Champion - Center */}
-          <div className="flex flex-col items-center justify-center gap-12 px-8 min-w-[300px]">
-            {champion && (
-              <motion.div 
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="flex flex-col items-center text-center space-y-4"
-              >
-                <div className="relative">
-                  <div className="absolute inset-0 bg-yellow-500 blur-3xl opacity-30 rounded-full"></div>
-                  <Trophy className="w-24 h-24 text-yellow-500 relative z-10 drop-shadow-[0_0_15px_rgba(234,179,8,0.8)]" />
-                </div>
-                <div>
-                  <div className="text-yellow-500 font-black tracking-widest text-sm uppercase mb-1">World Champion</div>
-                  <div className="text-4xl font-display font-black text-foreground drop-shadow-md">
-                    {champion}
+          {/* Connector: SF left → Final */}
+          <BracketConnector count={2} pairTo={1} slim />
+
+          {/* ===== CENTER: Final + Champion ===== */}
+          <div className="flex flex-col items-center justify-center w-[200px] gap-6">
+            <RoundLabel label="Grand Final" />
+
+            {/* Champion display */}
+            <AnimatePresence>
+              {champion && (
+                <motion.div
+                  key="champion"
+                  initial={{ scale: 0.6, opacity: 0, y: 20 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  transition={{ type: 'spring', stiffness: 200, damping: 18 }}
+                  className="relative flex flex-col items-center text-center gap-3 px-4 py-5 rounded-2xl champion-glow"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(212,175,55,0.05) 100%)',
+                    border: '1px solid rgba(212,175,55,0.5)',
+                  }}
+                >
+                  {showConfetti && <ChampionConfetti />}
+                  {/* Spotlight */}
+                  <div
+                    className="absolute inset-0 rounded-2xl pointer-events-none spotlight"
+                    style={{ background: 'radial-gradient(circle at 50% 20%, rgba(212,175,55,0.12) 0%, transparent 70%)' }}
+                  />
+                  <Trophy
+                    className="w-10 h-10 trophy-float relative z-10"
+                    style={{ color: '#D4AF37', filter: 'drop-shadow(0 0 12px rgba(212,175,55,0.7))' }}
+                  />
+                  <div className="relative z-10">
+                    <div
+                      className="text-[9px] font-black tracking-[0.25em] uppercase mb-1"
+                      style={{ color: 'rgba(212,175,55,0.7)' }}
+                    >
+                      World Champion
+                    </div>
+                    <div className="text-lg font-black font-display leading-tight gold-shimmer-text">
+                      {champion}
+                    </div>
                   </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Final match */}
+            {final && (
+              <div className="relative">
+                <div
+                  className="absolute -inset-3 rounded-2xl pointer-events-none"
+                  style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.08) 0%, transparent 70%)' }}
+                />
+                <MatchBox
+                  matchId="final"
+                  {...final}
+                  isFinal
+                  onSelect={(team) => onAdvanceTeam('final', 0, team)}
+                />
+              </div>
             )}
 
-            <div className="w-full flex flex-col items-center gap-8 mt-auto">
-              {final && (
-                <div className="relative">
-                  <div className="absolute -inset-4 bg-yellow-500/10 blur-xl rounded-full z-0 pointer-events-none"></div>
-                  <MatchBox
-                    matchId="final"
-                    {...final}
-                    isFinal
-                    onSelect={(team) => onAdvanceTeam('final', 0, team)}
-                  />
+            {/* 3rd place */}
+            {thirdPlace && (thirdPlace.team1 || thirdPlace.team2) && (
+              <div className="flex flex-col items-center gap-2 mt-2">
+                <div
+                  className="flex items-center gap-1.5 text-[9px] font-black tracking-widest uppercase"
+                  style={{ color: 'rgba(180,180,190,0.6)' }}
+                >
+                  <Medal size={10} />
+                  3rd Place
                 </div>
-              )}
-            </div>
-            
-            {thirdPlace && (
-              <div className="mt-8">
-                <div className="text-center text-muted-foreground text-xs font-bold uppercase tracking-widest mb-2">3rd Place Match</div>
                 <MatchBox
                   matchId="thirdPlace"
                   {...thirdPlace}
+                  label="3rd Place"
                   onSelect={(team) => onAdvanceTeam('thirdPlace', 0, team)}
                 />
               </div>
             )}
           </div>
 
-          {/* SF - Right (Wait, the bracket says SF has 3 matches... wait, no! SF has 3 matches?! Let's check instructions!)
-          "Semifinals - 3 matches (winners of QF): SF1: W(QF1) vs W(QF2), SF2: W(QF3) vs W(QF4), SF3: W(QF5) vs W(QF6)"
-          Wait! 24 teams advance -> 12 R16 -> 6 QF -> 3 SF!
-          Final: W(SF1) vs W(SF2), 3rd place is W(SF3).
-          This is an unusual bracket shape! I need to adjust my layout.
-          Left side: 6 R16 -> 3 QF -> SF1 and half of SF3?
-          Right side: 6 R16 -> 3 QF -> SF2 and half of SF3?
-          Let's lay out sequentially from left to right, or symmetrical?
-          Since it's 12 matches in R16, let's do 6 on left, 6 on right.
-          Left QF: 3. Right QF: 3.
-          SF: 3 matches total. We can put SF1 on left, SF2 on right. And SF3... where? Below the final?
-          Let's do exactly that. SF3 on the left or right, or center below.
-          Wait! QF is 6 matches.
-          QF1 = W(Match1) vs W(Match2). (Left)
-          QF2 = W(Match3) vs W(Match4). (Left)
-          QF3 = W(Match5) vs W(Match6). (Left)
-          QF4 = W(Match7) vs W(Match8). (Right)
-          QF5 = W(Match9) vs W(Match10). (Right)
-          QF6 = W(Match11) vs W(Match12). (Right)
-          
-          SF1 = W(QF1) vs W(QF2). (Left)
-          SF2 = W(QF4) vs W(QF5). WAIT! 
-          The instructions say:
-          SF1: W(QF1) vs W(QF2)
-          SF2: W(QF3) vs W(QF4)
-          SF3: W(QF5) vs W(QF6)
-          This means the bracket doesn't split neatly left/right. 
-          QF1, QF2 -> SF1.
-          QF3, QF4 -> SF2.
-          QF5, QF6 -> SF3.
-          This is a straight tree. I should render it left-to-right!
-          */}
+          {/* Connector: Final ← SF right */}
+          <BracketConnector count={2} pairTo={1} slim reverse />
 
-          {/* SF - Right (Temporarily adapting to standard left/right, let's read carefully above logic) */}
-          <div className="flex flex-col justify-around gap-24 py-32">
-            {sf.slice(2, 3).map((match, i) => (
-              <MatchBox
-                key={`sf-r-${i}`}
-                matchId={`sf-${i+2}`}
-                {...match}
-                onSelect={(team) => onAdvanceTeam('sf', i+2, team)}
-              />
-            ))}
+          {/* ===== SF RIGHT (match 2 only) ===== */}
+          <div className="flex flex-col w-[172px]">
+            <RoundLabel label="Semifinals" />
+            <div className={`flex flex-col ${matchGap} flex-1 justify-around py-2`}>
+              {sf.slice(2, 3).map((match, i) => (
+                <MatchBox
+                  key={`sf-r-${i}`}
+                  matchId={`sf-${i + 2}`}
+                  {...match}
+                  onSelect={(team) => onAdvanceTeam('sf', i + 2, team)}
+                />
+              ))}
+            </div>
           </div>
 
-          <div className="flex flex-col justify-around gap-12 py-16">
-            {qf.slice(3, 6).map((match, i) => (
-              <MatchBox
-                key={`qf-r-${i}`}
-                matchId={`qf-${i+3}`}
-                {...match}
-                onSelect={(team) => onAdvanceTeam('qf', i+3, team)}
-              />
-            ))}
+          {/* Connector: QF right → SF right */}
+          <BracketConnector count={3} pairTo={2} reverse />
+
+          {/* ===== QF RIGHT (matches 3-5) ===== */}
+          <div className="flex flex-col w-[172px]">
+            <RoundLabel label="Quarterfinals" />
+            <div className={`flex flex-col ${matchGap} flex-1 justify-around py-2`}>
+              {qf.slice(3, 6).map((match, i) => (
+                <MatchBox
+                  key={`qf-r-${i}`}
+                  matchId={`qf-${i + 3}`}
+                  {...match}
+                  onSelect={(team) => onAdvanceTeam('qf', i + 3, team)}
+                />
+              ))}
+            </div>
           </div>
 
-          <div className="flex flex-col justify-around gap-4 py-8">
-            {r16.slice(6, 12).map((match, i) => (
-              <MatchBox
-                key={`r16-r-${i}`}
-                matchId={`r16-${i+6}`}
-                {...match}
-                onSelect={(team) => onAdvanceTeam('r16', i+6, team)}
-              />
-            ))}
+          {/* Connector: R16 right → QF right */}
+          <BracketConnector count={6} pairTo={3} reverse />
+
+          {/* ===== R16 RIGHT (matches 6-11) ===== */}
+          <div className="flex flex-col w-[172px]">
+            <RoundLabel label="Round of 16" />
+            <div className={`flex flex-col ${matchGap} flex-1 justify-around py-2`}>
+              {r16.slice(6, 12).map((match, i) => (
+                <MatchBox
+                  key={`r16-r-${i}`}
+                  matchId={`r16-${i + 6}`}
+                  {...match}
+                  onSelect={(team) => onAdvanceTeam('r16', i + 6, team)}
+                />
+              ))}
+            </div>
           </div>
 
         </div>
       </div>
+    </div>
+  );
+}
+
+function BracketConnector({
+  count,
+  pairTo,
+  slim = false,
+  reverse = false,
+}: {
+  count: number;
+  pairTo: number;
+  slim?: boolean;
+  reverse?: boolean;
+}) {
+  const width = slim ? 24 : 32;
+  const pairs = Math.floor(count / pairTo);
+
+  return (
+    <div
+      className="flex flex-col justify-around items-center flex-shrink-0 mt-10"
+      style={{ width, alignSelf: 'stretch' }}
+    >
+      {Array.from({ length: pairs }).map((_, i) => (
+        <div
+          key={i}
+          className="flex-1 flex flex-col justify-center"
+          style={{ maxHeight: `${100 / pairs}%` }}
+        >
+          <svg
+            width={width}
+            height="100%"
+            style={{ display: 'block', overflow: 'visible' }}
+            preserveAspectRatio="none"
+          >
+            {reverse ? (
+              <path
+                d={`M ${width} 25% L ${width / 2} 25% L ${width / 2} 75% L ${width} 75%`}
+                stroke="rgba(212,175,55,0.2)"
+                strokeWidth="1.5"
+                fill="none"
+              />
+            ) : (
+              <path
+                d={`M 0 25% L ${width / 2} 25% L ${width / 2} 75% L 0 75%`}
+                stroke="rgba(212,175,55,0.2)"
+                strokeWidth="1.5"
+                fill="none"
+              />
+            )}
+          </svg>
+        </div>
+      ))}
     </div>
   );
 }
