@@ -79,28 +79,6 @@ export function UsernameEntry({ onStart }: UsernameEntryProps) {
           </motion.p>
         </div>
 
-        {/* Feature badges */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.5 }}
-          className="flex flex-wrap justify-center gap-2"
-        >
-          {['48 Nations', '12 Groups', 'Knockout Bracket', 'Share on X'].map((label) => (
-            <span
-              key={label}
-              className="px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase border"
-              style={{
-                background: 'rgba(212,175,55,0.08)',
-                borderColor: 'rgba(212,175,55,0.2)',
-                color: 'rgba(212,175,55,0.8)',
-              }}
-            >
-              {label}
-            </span>
-          ))}
-        </motion.div>
-
         {/* Form */}
         <motion.form
           onSubmit={handleSubmit}
