@@ -309,7 +309,7 @@ export function KnockoutBracket({ state, onAdvanceTeam }: KnockoutBracketProps) 
                       crossOrigin="anonymous"
                       alt="Trophy"
                       className="trophy-img-glow relative z-10"
-                      style={{ width: 28, height: 38, objectFit: 'contain' }}
+                      style={{ width: 34, height: 46, objectFit: 'contain' }}
                     />
                     <div className="relative z-10">
                       <div style={{
