@@ -158,14 +158,6 @@ export function GroupCard({ groupId, teams, selection, onSelect }: GroupCardProp
                         transition={{ duration: 0.16 }}
                         className="flex items-center gap-1.5 overflow-hidden"
                       >
-                        {rank != null && (
-                          <span
-                            className="text-[10px] font-bold tabular-nums"
-                            style={{ color: 'rgba(212,175,55,0.6)' }}
-                          >
-                            #{rank}
-                          </span>
-                        )}
                         {conf && confStyle && (
                           <span
                             className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
