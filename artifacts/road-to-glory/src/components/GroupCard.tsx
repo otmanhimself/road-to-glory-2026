@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getFlagUrl, FIFA_RANKINGS, CONFEDERATION, CONFEDERATION_STYLE } from '@/data/groups';
+import { getFlagUrl } from '@/data/groups';
 import { GroupSelection } from '@/utils/bracket';
 
 interface GroupCardProps {
@@ -18,8 +18,6 @@ const BADGE_CONFIG = {
 
 export function GroupCard({ groupId, teams, selection, onSelect }: GroupCardProps) {
   const isComplete = !!(selection.first && selection.second && selection.third);
-  const [hoveredTeam, setHoveredTeam] = useState<string | null>(null);
-  const [tappedTeam, setTappedTeam] = useState<string | null>(null);
 
   const getPlacement = (team: string): 'first' | 'second' | 'third' | null => {
     if (selection.first === team) return 'first';
@@ -29,16 +27,6 @@ export function GroupCard({ groupId, teams, selection, onSelect }: GroupCardProp
   };
 
   const allTaken = !!(selection.first && selection.second && selection.third);
-
-  const handleRowClick = (team: string, isDisabled: boolean) => {
-    if (isDisabled) return;
-    if (tappedTeam === team) {
-      setTappedTeam(null);
-      onSelect(groupId, team);
-    } else {
-      setTappedTeam(team);
-    }
-  };
 
   return (
     <motion.div
@@ -101,29 +89,19 @@ export function GroupCard({ groupId, teams, selection, onSelect }: GroupCardProp
           const placement = getPlacement(team);
           const cfg = placement ? BADGE_CONFIG[placement] : null;
           const isDisabled = !placement && allTaken;
-          const rank = FIFA_RANKINGS[team];
-          const conf = CONFEDERATION[team];
-          const confStyle = conf ? CONFEDERATION_STYLE[conf] : null;
-          const showInfo = hoveredTeam === team || tappedTeam === team;
 
           return (
             <motion.button
               key={team}
-              onClick={() => handleRowClick(team, isDisabled)}
-              onMouseEnter={() => setHoveredTeam(team)}
-              onMouseLeave={() => setHoveredTeam(null)}
-              whileTap={!isDisabled ? { scale: 0.98 } : {}}
+              onClick={() => !isDisabled && onSelect(groupId, team)}
+              whileTap={!isDisabled ? { scale: 0.97 } : {}}
               className="flex items-center justify-between px-3 w-full text-left"
               style={{
                 minHeight: '48px',
                 paddingTop: '8px',
                 paddingBottom: '8px',
-                background: cfg
-                  ? cfg.rowBg
-                  : showInfo
-                  ? 'rgba(212,175,55,0.03)'
-                  : 'transparent',
-                borderLeft: `3px solid ${cfg ? cfg.leftBorder : showInfo ? 'rgba(212,175,55,0.25)' : 'transparent'}`,
+                background: cfg ? cfg.rowBg : 'transparent',
+                borderLeft: `3px solid ${cfg ? cfg.leftBorder : 'transparent'}`,
                 borderBottom: '1px solid rgba(255,255,255,0.04)',
                 opacity: isDisabled ? 0.35 : 1,
                 cursor: isDisabled ? 'not-allowed' : 'pointer',
@@ -131,7 +109,7 @@ export function GroupCard({ groupId, teams, selection, onSelect }: GroupCardProp
               }}
               data-testid={`button-team-${groupId}-${team.replace(/\s+/g, '-')}`}
             >
-              {/* Flag + name + meta */}
+              {/* Flag + name */}
               <div className="flex items-center gap-2.5 min-w-0 flex-1">
                 <img
                   src={getFlagUrl(team)}
@@ -140,48 +118,12 @@ export function GroupCard({ groupId, teams, selection, onSelect }: GroupCardProp
                   style={{ border: '1px solid rgba(255,255,255,0.1)' }}
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
-                <div className="flex flex-col min-w-0">
-                  <span
-                    className="font-semibold text-sm truncate leading-tight"
-                    style={{ color: cfg ? cfg.color : 'rgba(255,255,255,0.55)' }}
-                  >
-                    {team}
-                  </span>
-
-                  {/* Ranking + confederation — visible on hover/tap */}
-                  <AnimatePresence>
-                    {showInfo && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.16 }}
-                        className="flex items-center gap-1.5 overflow-hidden"
-                      >
-                        {conf && confStyle && (
-                          <span
-                            className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
-                            style={{
-                              background: confStyle.bg,
-                              color: confStyle.color,
-                              border: `1px solid ${confStyle.border}`,
-                            }}
-                          >
-                            {conf}
-                          </span>
-                        )}
-                        {tappedTeam === team && !cfg && (
-                          <span
-                            className="text-[8px] font-medium"
-                            style={{ color: 'rgba(255,255,255,0.22)' }}
-                          >
-                            tap again to pick
-                          </span>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                <span
+                  className="font-semibold text-sm truncate leading-tight"
+                  style={{ color: cfg ? cfg.color : 'rgba(255,255,255,0.55)' }}
+                >
+                  {team}
+                </span>
               </div>
 
               {/* Placement badge */}
