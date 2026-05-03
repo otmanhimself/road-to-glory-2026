@@ -293,6 +293,16 @@
   background: rgba(212, 175, 55, 0.7);
 }
 
+/* ============ REAL TROPHY IMAGE ============ */
+@keyframes trophy-glow-pulse {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(212,175,55,0.7)) drop-shadow(0 0 20px rgba(212,175,55,0.3)); }
+  50%       { filter: drop-shadow(0 0 28px rgba(212,175,55,1))  drop-shadow(0 0 60px rgba(212,175,55,0.6)); }
+}
+
+.trophy-img-glow {
+  animation: trophy-float 3s ease-in-out infinite, trophy-glow-pulse 2.5s ease-in-out infinite;
+}
+
 /* ============ CONFETTI PARTICLES ============ */
 .confetti-particle {
   position: absolute;

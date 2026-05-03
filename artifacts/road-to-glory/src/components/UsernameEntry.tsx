@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trophy, RotateCcw, ChevronRight } from 'lucide-react';
+import { RotateCcw, ChevronRight } from 'lucide-react';
 
 interface SavedProgress {
   username: string;
@@ -76,9 +76,11 @@ export function UsernameEntry({ onStart, savedProgress, onResume, onStartFresh }
           transition={{ delay: 0.2, duration: 0.6, type: 'spring', stiffness: 150 }}
           className="trophy-float"
         >
-          <Trophy
-            className="w-16 h-16 md:w-20 md:h-20 drop-shadow-[0_0_20px_rgba(212,175,55,0.6)]"
-            style={{ color: '#D4AF37' }}
+          <img
+            src="/trophy.png"
+            alt="World Cup Trophy"
+            className="trophy-img-glow"
+            style={{ width: 80, height: 108, objectFit: 'contain' }}
           />
         </motion.div>
 

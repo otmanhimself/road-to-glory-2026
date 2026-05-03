@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { BracketState } from '@/utils/bracket';
 import { MatchBox } from './MatchBox';
-import { Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChampionReveal } from './ChampionReveal';
 
@@ -305,9 +304,11 @@ export function KnockoutBracket({ state, onAdvanceTeam }: KnockoutBracketProps) 
                     {showConfetti && <ChampionConfetti />}
                     <div className="absolute inset-0 rounded-2xl pointer-events-none spotlight"
                       style={{ background: 'radial-gradient(circle at 50% 20%, rgba(212,175,55,0.14) 0%, transparent 70%)' }} />
-                    <Trophy
-                      className="w-8 h-8 trophy-float relative z-10"
-                      style={{ color: '#D4AF37', filter: 'drop-shadow(0 0 8px rgba(212,175,55,0.8))' }}
+                    <img
+                      src="/trophy.png"
+                      alt="Trophy"
+                      className="trophy-img-glow relative z-10"
+                      style={{ width: 28, height: 38, objectFit: 'contain' }}
                     />
                     <div className="relative z-10">
                       <div style={{

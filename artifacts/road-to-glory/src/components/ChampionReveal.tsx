@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy } from 'lucide-react';
 import { getFlagUrl } from '@/data/groups';
 
 interface Particle {
@@ -107,12 +106,11 @@ export function ChampionReveal({ champion }: ChampionRevealProps) {
             transition={{ delay: 0.15, duration: 0.7, type: 'spring', stiffness: 140, damping: 14 }}
             className="relative z-10 mb-4 trophy-float"
           >
-            <Trophy
-              className="w-20 h-20 md:w-24 md:h-24"
-              style={{
-                color: '#D4AF37',
-                filter: 'drop-shadow(0 0 28px rgba(212,175,55,0.9)) drop-shadow(0 0 60px rgba(212,175,55,0.5))',
-              }}
+            <img
+              src="/trophy.png"
+              alt="World Cup Trophy"
+              className="trophy-img-glow"
+              style={{ width: 110, height: 148, objectFit: 'contain' }}
             />
           </motion.div>
 
