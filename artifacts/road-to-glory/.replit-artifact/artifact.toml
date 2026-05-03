@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Road to Glory 2026"
+version = "1.0.0"
+id = "artifacts/road-to-glory"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18652
+
+[services.development]
+run = "pnpm --filter @workspace/road-to-glory run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/road-to-glory", "run", "build" ]
+publicDir = "artifacts/road-to-glory/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18652"
+BASE_PATH = "/"
