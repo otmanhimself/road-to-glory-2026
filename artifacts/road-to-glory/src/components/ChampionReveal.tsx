@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getFlagUrl } from '@/data/groups';
 import { BracketState, Match } from '@/utils/bracket';
@@ -103,9 +103,34 @@ interface ChampionRevealProps {
   username?: string;
 }
 
+function useCopyLink() {
+  const [copied, setCopied] = useState(false);
+  const copy = useCallback(() => {
+    const url = typeof window !== 'undefined' ? window.location.origin : '';
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {
+      // Fallback for browsers that block clipboard access
+      const ta = document.createElement('textarea');
+      ta.value = url;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, []);
+  return { copied, copy };
+}
+
 export function ChampionReveal({ champion, knockout, username = '' }: ChampionRevealProps) {
   const [showConfetti, setShowConfetti] = useState(false);
   const prevChampion = useRef<string | null>(null);
+  const { copied, copy } = useCopyLink();
 
   useEffect(() => {
     if (champion && champion !== prevChampion.current) {
@@ -362,7 +387,7 @@ export function ChampionReveal({ champion, knockout, username = '' }: ChampionRe
             </motion.div>
           )}
 
-          {/* ── SHARE ON X BUTTON ── */}
+          {/* ── SHARE BUTTONS ── */}
           {champion && (
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -370,27 +395,64 @@ export function ChampionReveal({ champion, knockout, username = '' }: ChampionRe
               transition={{ delay: path.length > 0 ? 1.35 + path.length * 0.12 + 0.3 : 1.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               className="relative z-10 mt-8 flex flex-col items-center gap-3"
             >
-              <a
-                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(buildShareText(champion, path, username))}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2.5 px-7 py-3.5 rounded-xl font-black text-sm uppercase tracking-widest transition-all duration-200 hover:scale-[1.04] hover:brightness-110 active:scale-95"
-                style={{
-                  background: '#000000',
-                  color: '#ffffff',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  boxShadow: '0 0 24px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.5)',
-                  letterSpacing: '0.12em',
-                }}
-              >
-                <XIcon />
-                Share on X
-              </a>
+              <div className="flex items-center gap-3">
+                {/* Share on X */}
+                <a
+                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(buildShareText(champion, path, username))}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-5 py-3 rounded-xl font-black text-sm uppercase tracking-widest transition-all duration-200 hover:scale-[1.04] hover:brightness-110 active:scale-95 select-none"
+                  style={{
+                    background: '#000000',
+                    color: '#ffffff',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    boxShadow: '0 0 20px rgba(0,0,0,0.6), 0 4px 14px rgba(0,0,0,0.5)',
+                    letterSpacing: '0.1em',
+                  }}
+                >
+                  <XIcon />
+                  Share on X
+                </a>
+
+                {/* Copy Link */}
+                <button
+                  onClick={copy}
+                  className="flex items-center gap-2 px-5 py-3 rounded-xl font-black text-sm uppercase tracking-widest transition-all duration-200 hover:scale-[1.04] active:scale-95 select-none"
+                  style={{
+                    background: copied
+                      ? 'linear-gradient(135deg, rgba(212,175,55,0.25) 0%, rgba(212,175,55,0.12) 100%)'
+                      : 'rgba(255,255,255,0.05)',
+                    color: copied ? '#F0D060' : 'rgba(255,255,255,0.55)',
+                    border: `1px solid ${copied ? 'rgba(212,175,55,0.45)' : 'rgba(255,255,255,0.1)'}`,
+                    boxShadow: copied ? '0 0 16px rgba(212,175,55,0.2)' : 'none',
+                    letterSpacing: '0.1em',
+                    transition: 'all 0.25s ease',
+                  }}
+                >
+                  {copied ? (
+                    <>
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                      </svg>
+                      Copy Link
+                    </>
+                  )}
+                </button>
+              </div>
+
               <p
                 className="text-[10px] font-medium tracking-widest uppercase"
-                style={{ color: 'rgba(255,255,255,0.2)' }}
+                style={{ color: 'rgba(255,255,255,0.18)' }}
               >
-                Post your prediction
+                Share your prediction
               </p>
             </motion.div>
           )}
