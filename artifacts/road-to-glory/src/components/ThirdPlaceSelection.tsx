@@ -13,10 +13,14 @@ interface ThirdPlaceSelectionProps {
 
 const REQUIRED = 8;
 
+// Canonical group order A→L — never changes
+const GROUP_ORDER = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'] as const;
+
 export function ThirdPlaceSelection({ groups, selected, onToggle, onContinue }: ThirdPlaceSelectionProps) {
-  const thirdPlaceTeams = Object.entries(groups)
-    .filter(([, g]) => g.third)
-    .map(([groupId, g]) => ({ groupId, team: g.third! }));
+  // Extract ONLY the user's actual third-place picks, in fixed A→L order
+  const thirdPlaceTeams = GROUP_ORDER
+    .map(groupId => ({ groupId, team: groups[groupId]?.third ?? null }))
+    .filter((entry): entry is { groupId: string; team: string } => entry.team !== null);
 
   const count = selected.length;
   const isComplete = count === REQUIRED;

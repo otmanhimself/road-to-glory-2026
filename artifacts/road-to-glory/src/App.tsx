@@ -127,7 +127,17 @@ function RoadToGloryApp() {
   };
 
   const handleGoToThirdPlace = () => {
-    setState(prev => ({ ...prev, phase: 3 }));
+    setState(prev => {
+      // Get the exact set of teams the user picked as 3rd place, in A→L order
+      const validThirds = new Set(
+        ['A','B','C','D','E','F','G','H','I','J','K','L']
+          .map(id => prev.groups[id]?.third)
+          .filter((t): t is string => !!t)
+      );
+      // Keep only previously selected teams that are still valid 3rd-place picks
+      const sanitized = prev.selectedThirdPlace.filter(t => validThirds.has(t));
+      return { ...prev, phase: 3, selectedThirdPlace: sanitized };
+    });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
