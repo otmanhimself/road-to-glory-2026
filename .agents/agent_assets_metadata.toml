@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "fFFpgygjiq6b0TrSMv9kO"
+uri = "file://artifacts/road-to-glory/public/og-image.png"
+type = "image"
+title = "Social Preview Card (1200×630)"
