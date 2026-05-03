@@ -169,7 +169,7 @@ export function UsernameEntry({ onStart, savedProgress, onResume, onStartFresh }
             alt="World Cup Trophy"
             crossOrigin="anonymous"
             className="trophy-img-glow"
-            style={{ width: 80, height: 108, objectFit: 'contain' }}
+            style={{ width: 120, height: 162, objectFit: 'contain' }}
           />
         </motion.div>
 
