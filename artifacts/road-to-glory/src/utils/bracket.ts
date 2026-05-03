@@ -1,91 +1,123 @@
+export interface GroupSelection {
+  first: string | null;
+  second: string | null;
+  third: string | null;
+}
+
+export interface Match {
+  team1: string;
+  team2: string;
+  winner: string | null;
+}
+
 export interface BracketState {
   username: string;
-  phase: 1 | 2 | 3;
-  groups: Record<string, { first: string | null; second: string | null }>;
+  phase: 1 | 2 | 3 | 4;
+  groups: Record<string, GroupSelection>;
+  selectedThirdPlace: string[];
   knockout: {
-    r16: Array<{ team1: string; team2: string; winner: string | null }>;
-    qf: Array<{ team1: string; team2: string; winner: string | null }>;
-    sf: Array<{ team1: string; team2: string; winner: string | null }>;
-    final: { team1: string; team2: string; winner: string | null } | null;
-    thirdPlace: { team1: string; team2: string; winner: string | null } | null;
+    r32: Match[];
+    r16: Match[];
+    qf: Match[];
+    sf: Match[];
+    final: Match | null;
     champion: string | null;
   };
 }
 
-export const initialKnockoutState = {
-  r16: Array(12).fill({ team1: '', team2: '', winner: null }),
-  qf: Array(6).fill({ team1: '', team2: '', winner: null }),
-  sf: Array(3).fill({ team1: '', team2: '', winner: null }),
+const emptyMatch = (): Match => ({ team1: '', team2: '', winner: null });
+
+export const initialKnockoutState: BracketState['knockout'] = {
+  r32: Array.from({ length: 16 }, emptyMatch),
+  r16: Array.from({ length: 8 }, emptyMatch),
+  qf: Array.from({ length: 4 }, emptyMatch),
+  sf: Array.from({ length: 2 }, emptyMatch),
   final: null,
-  thirdPlace: null,
   champion: null,
 };
 
-export const generateR16 = (groups: Record<string, { first: string | null; second: string | null }>) => {
+export const generateR32 = (
+  groups: Record<string, GroupSelection>,
+  selectedThirdPlace: string[]
+): Match[] => {
+  const g = groups;
+  const t = selectedThirdPlace;
   return [
-    { team1: groups['A']?.first || '', team2: groups['B']?.second || '', winner: null }, // Match 1
-    { team1: groups['C']?.first || '', team2: groups['D']?.second || '', winner: null }, // Match 2
-    { team1: groups['E']?.first || '', team2: groups['F']?.second || '', winner: null }, // Match 3
-    { team1: groups['G']?.first || '', team2: groups['H']?.second || '', winner: null }, // Match 4
-    { team1: groups['I']?.first || '', team2: groups['J']?.second || '', winner: null }, // Match 5
-    { team1: groups['K']?.first || '', team2: groups['L']?.second || '', winner: null }, // Match 6
-    { team1: groups['B']?.first || '', team2: groups['A']?.second || '', winner: null }, // Match 7
-    { team1: groups['D']?.first || '', team2: groups['C']?.second || '', winner: null }, // Match 8
-    { team1: groups['F']?.first || '', team2: groups['E']?.second || '', winner: null }, // Match 9
-    { team1: groups['H']?.first || '', team2: groups['G']?.second || '', winner: null }, // Match 10
-    { team1: groups['J']?.first || '', team2: groups['I']?.second || '', winner: null }, // Match 11
-    { team1: groups['L']?.first || '', team2: groups['K']?.second || '', winner: null }, // Match 12
+    // Left side — matches 0-7
+    { team1: g['A']?.first || '', team2: g['B']?.second || '', winner: null },  // 0
+    { team1: g['C']?.first || '', team2: g['D']?.second || '', winner: null },  // 1
+    { team1: g['E']?.first || '', team2: g['F']?.second || '', winner: null },  // 2
+    { team1: g['G']?.first || '', team2: g['H']?.second || '', winner: null },  // 3
+    { team1: g['I']?.first || '', team2: g['J']?.second || '', winner: null },  // 4
+    { team1: g['K']?.first || '', team2: g['L']?.second || '', winner: null },  // 5
+    { team1: t[0] || '', team2: t[1] || '', winner: null },                     // 6
+    { team1: t[2] || '', team2: t[3] || '', winner: null },                     // 7
+    // Right side — matches 8-15
+    { team1: g['B']?.first || '', team2: g['A']?.second || '', winner: null },  // 8
+    { team1: g['D']?.first || '', team2: g['C']?.second || '', winner: null },  // 9
+    { team1: g['F']?.first || '', team2: g['E']?.second || '', winner: null },  // 10
+    { team1: g['H']?.first || '', team2: g['G']?.second || '', winner: null },  // 11
+    { team1: g['J']?.first || '', team2: g['I']?.second || '', winner: null },  // 12
+    { team1: g['L']?.first || '', team2: g['K']?.second || '', winner: null },  // 13
+    { team1: t[4] || '', team2: t[5] || '', winner: null },                     // 14
+    { team1: t[6] || '', team2: t[7] || '', winner: null },                     // 15
   ];
 };
 
-export const updateKnockoutRounds = (knockout: BracketState['knockout']): BracketState['knockout'] => {
-  const newKnockout = { ...knockout };
+const resetIfStale = (match: Match, prev: Match | undefined): Match => {
+  if (!prev) return match;
+  if (match.winner && match.winner !== match.team1 && match.winner !== match.team2) {
+    return { ...match, winner: null };
+  }
+  return match;
+};
 
-  // Update QF
-  for (let i = 0; i < 6; i++) {
-    newKnockout.qf[i] = {
-      team1: newKnockout.r16[i * 2]?.winner || '',
-      team2: newKnockout.r16[i * 2 + 1]?.winner || '',
-      winner: newKnockout.qf[i]?.winner || null,
+export const updateKnockoutRounds = (
+  knockout: BracketState['knockout']
+): BracketState['knockout'] => {
+  const k = { ...knockout };
+
+  // R32 → R16
+  k.r16 = Array.from({ length: 8 }, (_, i) => {
+    const updated: Match = {
+      team1: k.r32[i * 2]?.winner || '',
+      team2: k.r32[i * 2 + 1]?.winner || '',
+      winner: k.r16[i]?.winner || null,
     };
-    // reset winner if team changes
-    if (newKnockout.qf[i].winner !== newKnockout.qf[i].team1 && newKnockout.qf[i].winner !== newKnockout.qf[i].team2) {
-      newKnockout.qf[i].winner = null;
-    }
-  }
+    return resetIfStale(updated, k.r16[i]);
+  });
 
-  // Update SF
-  for (let i = 0; i < 3; i++) {
-    newKnockout.sf[i] = {
-      team1: newKnockout.qf[i * 2]?.winner || '',
-      team2: newKnockout.qf[i * 2 + 1]?.winner || '',
-      winner: newKnockout.sf[i]?.winner || null,
+  // R16 → QF
+  k.qf = Array.from({ length: 4 }, (_, i) => {
+    const updated: Match = {
+      team1: k.r16[i * 2]?.winner || '',
+      team2: k.r16[i * 2 + 1]?.winner || '',
+      winner: k.qf[i]?.winner || null,
     };
-    if (newKnockout.sf[i].winner !== newKnockout.sf[i].team1 && newKnockout.sf[i].winner !== newKnockout.sf[i].team2) {
-      newKnockout.sf[i].winner = null;
-    }
+    return resetIfStale(updated, k.qf[i]);
+  });
+
+  // QF → SF
+  k.sf = Array.from({ length: 2 }, (_, i) => {
+    const updated: Match = {
+      team1: k.qf[i * 2]?.winner || '',
+      team2: k.qf[i * 2 + 1]?.winner || '',
+      winner: k.sf[i]?.winner || null,
+    };
+    return resetIfStale(updated, k.sf[i]);
+  });
+
+  // SF → Final
+  k.final = {
+    team1: k.sf[0]?.winner || '',
+    team2: k.sf[1]?.winner || '',
+    winner: k.final?.winner || null,
+  };
+  if (k.final.winner && k.final.winner !== k.final.team1 && k.final.winner !== k.final.team2) {
+    k.final.winner = null;
   }
 
-  // Update Final
-  newKnockout.final = {
-    team1: newKnockout.sf[0]?.winner || '',
-    team2: newKnockout.sf[1]?.winner || '',
-    winner: newKnockout.final?.winner || null,
-  };
-  if (newKnockout.final.winner !== newKnockout.final.team1 && newKnockout.final.winner !== newKnockout.final.team2) {
-    newKnockout.final.winner = null;
-  }
+  k.champion = k.final.winner;
 
-  // Update Third Place
-  const sf3Match = newKnockout.sf[2];
-  newKnockout.thirdPlace = {
-    team1: sf3Match?.team1 || '',
-    team2: sf3Match?.team2 || '',
-    winner: sf3Match?.winner || null, // The winner of SF3 is the 3rd place! Wait.
-  };
-
-  // Champion
-  newKnockout.champion = newKnockout.final.winner;
-
-  return newKnockout;
+  return k;
 };

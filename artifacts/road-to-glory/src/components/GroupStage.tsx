@@ -2,26 +2,42 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { GroupCard } from './GroupCard';
 import { GROUPS } from '@/data/groups';
+import { GroupSelection } from '@/utils/bracket';
 import { ChevronRight } from 'lucide-react';
 
 interface GroupStageProps {
-  groups: Record<string, { first: string | null; second: string | null }>;
+  groups: Record<string, GroupSelection>;
   onSelect: (groupId: string, team: string) => void;
   onGenerate: () => void;
 }
 
 export function GroupStage({ groups, onSelect, onGenerate }: GroupStageProps) {
-  const completedGroupsCount = Object.values(groups).filter(g => g.first && g.second).length;
+  const completedGroupsCount = Object.values(groups).filter(
+    g => g.first && g.second && g.third
+  ).length;
   const isComplete = completedGroupsCount === 12;
   const progressPercent = (completedGroupsCount / 12) * 100;
 
   return (
     <div className="min-h-[100dvh] flex flex-col pb-36">
       {/* Header */}
-      <div className="px-4 pt-8 pb-6 max-w-7xl mx-auto w-full text-center space-y-2">
-        <motion.h2
+      <div className="px-4 pt-8 pb-4 max-w-7xl mx-auto w-full text-center space-y-1">
+        <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
+          className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase mb-2"
+          style={{
+            background: 'rgba(212,175,55,0.08)',
+            border: '1px solid rgba(212,175,55,0.2)',
+            color: 'rgba(212,175,55,0.8)',
+          }}
+        >
+          Step 1 of 3
+        </motion.div>
+        <motion.h2
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
           className="text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-widest font-display"
           style={{ color: '#D4AF37' }}
         >
@@ -33,7 +49,7 @@ export function GroupStage({ groups, onSelect, onGenerate }: GroupStageProps) {
           transition={{ delay: 0.1 }}
           className="text-sm text-muted-foreground"
         >
-          Select 1st and 2nd place for each group
+          Select 1st, 2nd, and 3rd place for each group
         </motion.p>
       </div>
 
@@ -68,19 +84,16 @@ export function GroupStage({ groups, onSelect, onGenerate }: GroupStageProps) {
           borderTop: '1px solid rgba(212,175,55,0.15)',
         }}
       >
-        {/* Progress bar */}
         <div className="h-0.5 w-full bg-white/5">
           <motion.div
             className="h-full"
             style={{ background: 'linear-gradient(90deg, #D4AF37, #F0D060)' }}
-            initial={{ width: 0 }}
             animate={{ width: `${progressPercent}%` }}
-            transition={{ duration: 0.4, ease: 'easeOut' }}
+            transition={{ duration: 0.4 }}
           />
         </div>
 
         <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
-          {/* Progress info */}
           <div className="flex items-center gap-4 w-full sm:w-auto justify-center sm:justify-start">
             <div className="text-center sm:text-left">
               <div className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground">
@@ -95,35 +108,38 @@ export function GroupStage({ groups, onSelect, onGenerate }: GroupStageProps) {
             </div>
 
             {/* Group pills */}
-            <div className="hidden md:flex flex-wrap gap-1 max-w-xs">
-              {Object.entries(groups).map(([id, g]) => (
-                <div
-                  key={id}
-                  className="w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-black transition-colors duration-300"
-                  style={{
-                    background: g.first && g.second
-                      ? 'rgba(212,175,55,0.25)'
-                      : g.first || g.second
-                      ? 'rgba(212,175,55,0.1)'
-                      : 'rgba(255,255,255,0.05)',
-                    border: g.first && g.second
-                      ? '1px solid rgba(212,175,55,0.5)'
-                      : '1px solid rgba(255,255,255,0.08)',
-                    color: g.first && g.second ? '#D4AF37' : 'rgba(255,255,255,0.4)',
-                  }}
-                >
-                  {id}
-                </div>
-              ))}
+            <div className="hidden sm:flex flex-wrap gap-1 max-w-xs">
+              {Object.entries(groups).map(([id, g]) => {
+                const done = g.first && g.second && g.third;
+                const partial = (g.first || g.second || g.third) && !done;
+                return (
+                  <div
+                    key={id}
+                    className="w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-black transition-all duration-300"
+                    style={{
+                      background: done
+                        ? 'rgba(212,175,55,0.25)'
+                        : partial
+                        ? 'rgba(212,175,55,0.1)'
+                        : 'rgba(255,255,255,0.05)',
+                      border: done
+                        ? '1px solid rgba(212,175,55,0.5)'
+                        : '1px solid rgba(255,255,255,0.08)',
+                      color: done ? '#D4AF37' : 'rgba(255,255,255,0.4)',
+                    }}
+                  >
+                    {id}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* CTA Button */}
           <motion.button
             onClick={isComplete ? onGenerate : undefined}
             disabled={!isComplete}
             whileTap={isComplete ? { scale: 0.97 } : {}}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-black text-base uppercase tracking-widest transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed min-h-[52px]"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-black text-sm uppercase tracking-widest transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed min-h-[52px]"
             style={isComplete ? {
               background: 'linear-gradient(135deg, #D4AF37 0%, #F0D060 50%, #D4AF37 100%)',
               color: '#0a0808',
@@ -135,8 +151,8 @@ export function GroupStage({ groups, onSelect, onGenerate }: GroupStageProps) {
             }}
             data-testid="button-generate-bracket"
           >
-            Generate Bracket
-            <ChevronRight size={18} />
+            Select 3rd Place Teams
+            <ChevronRight size={16} />
           </motion.button>
         </div>
       </div>
