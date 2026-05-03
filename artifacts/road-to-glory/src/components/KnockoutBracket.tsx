@@ -4,12 +4,24 @@ import { MatchBox } from './MatchBox';
 import { Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const SLOT_H = 96;
+const TOTAL_H = 8 * SLOT_H; // 768px — total height of bracket
+const MATCH_W = 152;
+const FINAL_W = 172;
+const CONN_W = 28;
+const SF_CONN_W = 18;
+const LABEL_H = 32;
+const GOLD = 'rgba(212,175,55,0.45)';
+const GOLD_WIN = 'rgba(212,175,55,0.85)';
+
 interface KnockoutBracketProps {
   state: BracketState;
   onAdvanceTeam: (round: keyof BracketState['knockout'], matchIndex: number, team: string) => void;
 }
 
-interface Particle { id: number; x: number; color: string; duration: number; delay: number; size: number; }
+interface Particle {
+  id: number; x: number; color: string; duration: number; delay: number; size: number;
+}
 
 function ChampionConfetti() {
   const [particles, setParticles] = useState<Particle[]>([]);
@@ -26,77 +38,141 @@ function ChampionConfetti() {
     return () => clearTimeout(t);
   }, []);
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ borderRadius: 16 }}>
       {particles.map(p => (
         <div key={p.id} className="confetti-particle absolute bottom-0"
-          style={{ left: `${p.x}%`, width: p.size, height: p.size, background: p.color,
+          style={{
+            left: `${p.x}%`, width: p.size, height: p.size, background: p.color,
             animationDuration: `${p.duration}s`, animationDelay: `${p.delay}s`,
-            borderRadius: p.id % 2 === 0 ? '50%' : '2px' }} />
+            borderRadius: p.id % 2 === 0 ? '50%' : '2px',
+          }} />
       ))}
     </div>
   );
 }
 
-function RoundLabel({ label, matchCount }: { label: string; matchCount?: number }) {
+// SVG connector between two rounds.
+// fromCount = number of matches on the "from" side (e.g. 8 for R32→R16).
+// Lines go left→right (normal) or right→left (reverse, for mirrored side).
+function BracketConnector({
+  fromCount, width, reverse = false,
+}: {
+  fromCount: number; width: number; reverse?: boolean;
+}) {
+  const fromSlotH = TOTAL_H / fromCount;
+  const groupCount = Math.floor(fromCount / 2);
+  const vx = width / 2;
+
+  // fromCount=1 → SF to Final: just a horizontal line at the vertical center
+  if (fromCount === 1) {
+    const midY = TOTAL_H / 2;
+    return (
+      <svg width={width} height={TOTAL_H} style={{ display: 'block', flexShrink: 0 }}>
+        <line
+          x1={0} y1={midY} x2={width} y2={midY}
+          stroke={GOLD} strokeWidth={1.5}
+        />
+      </svg>
+    );
+  }
+
   return (
-    <div className="mb-3 px-2 py-1.5 rounded-lg text-center" style={{
-      background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.14)',
-    }}>
-      <div className="text-[10px] font-black tracking-[0.18em] uppercase" style={{ color: 'rgba(212,175,55,0.75)' }}>
+    <svg width={width} height={TOTAL_H} style={{ display: 'block', flexShrink: 0, overflow: 'visible' }}>
+      {Array.from({ length: groupCount }).map((_, i) => {
+        const gTop = i * 2 * fromSlotH;
+        const m0Y = gTop + fromSlotH / 2;
+        const m1Y = gTop + 3 * fromSlotH / 2;
+        const midY = gTop + fromSlotH;
+        const inX = reverse ? width : 0;
+        const outX = reverse ? 0 : width;
+        return (
+          <g key={i} stroke={GOLD} strokeWidth={1.5} fill="none">
+            {/* Horizontal: match 0 → vertical bar */}
+            <line x1={inX} y1={m0Y} x2={vx} y2={m0Y} />
+            {/* Horizontal: match 1 → vertical bar */}
+            <line x1={inX} y1={m1Y} x2={vx} y2={m1Y} />
+            {/* Vertical bar connecting the pair */}
+            <line x1={vx} y1={m0Y} x2={vx} y2={m1Y} />
+            {/* Horizontal exit to next column at midpoint */}
+            <line x1={vx} y1={midY} x2={outX} y2={midY} />
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// Round column header
+function RoundLabel({ label, count }: { label: string; count?: number }) {
+  return (
+    <div
+      style={{
+        height: LABEL_H,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '0 4px',
+        background: 'rgba(212,175,55,0.05)',
+        border: '1px solid rgba(212,175,55,0.12)',
+        borderRadius: 8,
+        marginBottom: 2,
+      }}
+    >
+      <div style={{
+        fontSize: 9, fontWeight: 900, letterSpacing: '0.16em',
+        textTransform: 'uppercase', color: 'rgba(212,175,55,0.8)',
+        whiteSpace: 'nowrap',
+      }}>
         {label}
       </div>
-      {matchCount !== undefined && (
-        <div className="text-[9px]" style={{ color: 'rgba(255,255,255,0.3)' }}>
-          {matchCount} {matchCount === 1 ? 'match' : 'matches'}
+      {count !== undefined && (
+        <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', marginTop: 1 }}>
+          {count} {count === 1 ? 'match' : 'matches'}
         </div>
       )}
     </div>
   );
 }
 
-function ConnectorLines({ count, reverse = false }: { count: number; reverse?: boolean }) {
+// A full round column with label on top and matches distributed via justify-around
+function RoundColumn({
+  label, count, matches, roundKey, onSelect, width = MATCH_W,
+}: {
+  label: string;
+  count: number;
+  matches: { team1: string; team2: string; winner: string | null }[];
+  roundKey: string;
+  onSelect: (i: number, t: string) => void;
+  width?: number;
+}) {
   return (
-    <div className="flex flex-col justify-around flex-shrink-0 mt-10" style={{ width: 24, alignSelf: 'stretch' }}>
-      {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="flex-1 relative flex items-center">
-          <div className="absolute inset-0 flex flex-col justify-around">
-            <div style={{
-              position: 'absolute', top: '25%', bottom: '25%',
-              left: reverse ? undefined : 0, right: reverse ? 0 : undefined,
-              width: '50%',
-              borderTop: '1px solid rgba(212,175,55,0.2)',
-              borderBottom: '1px solid rgba(212,175,55,0.2)',
-              [reverse ? 'borderLeft' : 'borderRight']: '1px solid rgba(212,175,55,0.2)',
-            }} />
-          </div>
-        </div>
-      ))}
+    <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0, width }}>
+      <RoundLabel label={label} count={count} />
+      <div style={{
+        display: 'flex', flexDirection: 'column',
+        justifyContent: 'space-around', height: TOTAL_H,
+      }}>
+        {matches.map((match, i) => (
+          <MatchBox
+            key={`${roundKey}-${i}`}
+            matchId={`${roundKey}-${i}`}
+            {...match}
+            width={width}
+            onSelect={(t) => onSelect(i, t)}
+          />
+        ))}
+      </div>
     </div>
   );
 }
 
-function RoundColumn({
-  label, matches, matchIds, onSelect, matchCount,
-}: {
-  label: string;
-  matches: { team1: string; team2: string; winner: string | null }[];
-  matchIds: string[];
-  onSelect: (matchIndex: number, team: string) => void;
-  matchCount?: number;
-}) {
+// Wrapper that vertically aligns a connector SVG with the round columns
+function ConnectorCol({ children, width }: { children: React.ReactNode; width: number }) {
   return (
-    <div className="flex flex-col flex-shrink-0" style={{ width: 164 }}>
-      <RoundLabel label={label} matchCount={matchCount} />
-      <div className="flex flex-col gap-3 flex-1 justify-around py-2">
-        {matches.map((match, i) => (
-          <MatchBox
-            key={matchIds[i]}
-            matchId={matchIds[i]}
-            {...match}
-            onSelect={(team) => onSelect(i, team)}
-          />
-        ))}
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0, width }}>
+      <div style={{ height: LABEL_H + 2 }} />
+      {children}
     </div>
   );
 }
@@ -110,6 +186,7 @@ export function KnockoutBracket({ state, onAdvanceTeam }: KnockoutBracketProps) 
     final = null,
     champion = null,
   } = state.knockout;
+
   const [showConfetti, setShowConfetti] = useState(false);
   const prevChampion = useRef<string | null>(null);
 
@@ -120,135 +197,196 @@ export function KnockoutBracket({ state, onAdvanceTeam }: KnockoutBracketProps) 
       const t = setTimeout(() => setShowConfetti(false), 4500);
       return () => clearTimeout(t);
     }
+    return undefined;
   }, [champion]);
 
+  const FINAL_COL_W = FINAL_W + 32;
+
   return (
-    <div className="min-h-[100dvh] flex flex-col">
+    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+
       {/* Title */}
-      <div className="text-center pt-6 pb-2 px-4">
-        <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-widest font-display" style={{ color: '#D4AF37' }}>
+      <div className="text-center pt-6 pb-3 px-4">
+        <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-widest font-display"
+          style={{ color: '#D4AF37' }}>
           Knockout Stage
         </h2>
-        <p className="text-xs text-muted-foreground mt-1 tracking-wide">
+        <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
           Tap a team to advance them through the bracket
         </p>
       </div>
 
-      {/* Scrollable bracket */}
-      <div className="flex-1 overflow-x-auto overflow-y-visible px-3 pb-8">
-        <div className="flex items-stretch gap-0 min-w-max mx-auto py-4" style={{ justifyContent: 'center' }}>
+      {/* Horizontally scrollable bracket */}
+      <div
+        className="flex-1 overflow-x-auto overflow-y-visible pb-10"
+        style={{ paddingLeft: 12, paddingRight: 12 }}
+        data-bracket-scroll="true"
+      >
+        <div
+          className="inline-flex items-start"
+          style={{ gap: 0, paddingTop: 4, paddingBottom: 4 }}
+          data-bracket-content="true"
+        >
 
-          {/* === LEFT SIDE === */}
+          {/* ──────── LEFT HALF ──────── */}
+
+          {/* R32 Left (matches 0–7) */}
           <RoundColumn
-            label="Round of 32" matchCount={8}
+            label="Round of 32" count={8}
             matches={r32.slice(0, 8)}
-            matchIds={r32.slice(0, 8).map((_, i) => `r32-${i}`)}
+            roundKey="r32-l"
             onSelect={(i, t) => onAdvanceTeam('r32', i, t)}
           />
-          <ConnectorLines count={4} />
+          <ConnectorCol width={CONN_W}>
+            <BracketConnector fromCount={8} width={CONN_W} />
+          </ConnectorCol>
+
+          {/* R16 Left (matches 0–3) */}
           <RoundColumn
-            label="Round of 16" matchCount={4}
+            label="Round of 16" count={4}
             matches={r16.slice(0, 4)}
-            matchIds={r16.slice(0, 4).map((_, i) => `r16-${i}`)}
+            roundKey="r16-l"
             onSelect={(i, t) => onAdvanceTeam('r16', i, t)}
           />
-          <ConnectorLines count={2} />
+          <ConnectorCol width={CONN_W}>
+            <BracketConnector fromCount={4} width={CONN_W} />
+          </ConnectorCol>
+
+          {/* Quarterfinals Left (matches 0–1) */}
           <RoundColumn
-            label="Quarterfinals" matchCount={2}
+            label="Quarterfinals" count={2}
             matches={qf.slice(0, 2)}
-            matchIds={qf.slice(0, 2).map((_, i) => `qf-${i}`)}
+            roundKey="qf-l"
             onSelect={(i, t) => onAdvanceTeam('qf', i, t)}
           />
-          <ConnectorLines count={1} />
+          <ConnectorCol width={CONN_W}>
+            <BracketConnector fromCount={2} width={CONN_W} />
+          </ConnectorCol>
+
+          {/* Semifinals Left (match 0) */}
           <RoundColumn
-            label="Semifinals" matchCount={1}
+            label="Semifinals" count={1}
             matches={sf.slice(0, 1)}
-            matchIds={['sf-0']}
+            roundKey="sf-l"
             onSelect={(i, t) => onAdvanceTeam('sf', i, t)}
           />
-          <ConnectorLines count={1} />
+          <ConnectorCol width={SF_CONN_W}>
+            <BracketConnector fromCount={1} width={SF_CONN_W} />
+          </ConnectorCol>
 
-          {/* === CENTER: Final + Champion === */}
-          <div className="flex flex-col items-center justify-center flex-shrink-0 gap-4" style={{ width: 196, marginTop: 40 }}>
-            <div className="text-center mb-1">
-              <div className="text-[10px] font-black tracking-[0.18em] uppercase" style={{ color: 'rgba(212,175,55,0.75)' }}>
-                Grand Final
-              </div>
-            </div>
+          {/* ──────── CENTER: Final + Champion ──────── */}
+          <div style={{
+            display: 'flex', flexDirection: 'column', flexShrink: 0, width: FINAL_COL_W,
+          }}>
+            <RoundLabel label="Grand Final" />
 
-            {/* Champion */}
-            <AnimatePresence>
-              {champion && (
-                <motion.div
-                  key="champion"
-                  initial={{ scale: 0.6, opacity: 0, y: 16 }}
-                  animate={{ scale: 1, opacity: 1, y: 0 }}
-                  transition={{ type: 'spring', stiffness: 180, damping: 16 }}
-                  className="relative flex flex-col items-center text-center gap-2 px-4 py-4 rounded-2xl champion-glow w-full"
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(212,175,55,0.18) 0%, rgba(212,175,55,0.06) 100%)',
-                    border: '1px solid rgba(212,175,55,0.5)',
-                  }}
-                >
-                  {showConfetti && <ChampionConfetti />}
-                  <div className="absolute inset-0 rounded-2xl pointer-events-none spotlight"
-                    style={{ background: 'radial-gradient(circle at 50% 20%, rgba(212,175,55,0.12) 0%, transparent 70%)' }} />
-                  <Trophy className="w-9 h-9 trophy-float relative z-10"
-                    style={{ color: '#D4AF37', filter: 'drop-shadow(0 0 10px rgba(212,175,55,0.7))' }} />
-                  <div className="relative z-10">
-                    <div className="text-[9px] font-black tracking-[0.25em] uppercase mb-0.5" style={{ color: 'rgba(212,175,55,0.7)' }}>
-                      World Champion
+            <div style={{
+              height: TOTAL_H,
+              display: 'flex', flexDirection: 'column',
+              justifyContent: 'center', alignItems: 'center',
+              gap: 12, padding: '0 8px',
+            }}>
+
+              {/* Champion display */}
+              <AnimatePresence>
+                {champion && (
+                  <motion.div
+                    key="champion"
+                    initial={{ scale: 0.7, opacity: 0, y: 12 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    transition={{ type: 'spring', stiffness: 180, damping: 16 }}
+                    className="relative flex flex-col items-center text-center gap-2 px-4 py-4 rounded-2xl champion-glow w-full"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(212,175,55,0.2) 0%, rgba(212,175,55,0.06) 100%)',
+                      border: '1px solid rgba(212,175,55,0.55)',
+                    }}
+                  >
+                    {showConfetti && <ChampionConfetti />}
+                    <div className="absolute inset-0 rounded-2xl pointer-events-none spotlight"
+                      style={{ background: 'radial-gradient(circle at 50% 20%, rgba(212,175,55,0.14) 0%, transparent 70%)' }} />
+                    <Trophy
+                      className="w-8 h-8 trophy-float relative z-10"
+                      style={{ color: '#D4AF37', filter: 'drop-shadow(0 0 8px rgba(212,175,55,0.8))' }}
+                    />
+                    <div className="relative z-10">
+                      <div style={{
+                        fontSize: 8, fontWeight: 900, letterSpacing: '0.25em',
+                        textTransform: 'uppercase', color: 'rgba(212,175,55,0.75)', marginBottom: 3,
+                      }}>
+                        World Champion
+                      </div>
+                      <div className="font-black font-display gold-shimmer-text" style={{ fontSize: 14, lineHeight: 1.2 }}>
+                        {champion}
+                      </div>
                     </div>
-                    <div className="text-base font-black font-display leading-tight gold-shimmer-text">
-                      {champion}
-                    </div>
-                  </div>
-                </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Final match box */}
+              {final && (
+                <div style={{ position: 'relative', width: '100%' }}>
+                  <div style={{
+                    position: 'absolute', inset: -8, borderRadius: 20,
+                    background: 'radial-gradient(circle, rgba(212,175,55,0.08) 0%, transparent 70%)',
+                    pointerEvents: 'none',
+                  }} />
+                  <MatchBox
+                    matchId="final"
+                    {...final}
+                    isFinal
+                    width={FINAL_W}
+                    onSelect={(t) => onAdvanceTeam('final', 0, t)}
+                  />
+                </div>
               )}
-            </AnimatePresence>
-
-            {/* Final match */}
-            {final && (
-              <div className="relative w-full">
-                <div className="absolute -inset-3 rounded-2xl pointer-events-none"
-                  style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.07) 0%, transparent 70%)' }} />
-                <MatchBox
-                  matchId="final"
-                  {...final}
-                  isFinal
-                  onSelect={(team) => onAdvanceTeam('final', 0, team)}
-                />
-              </div>
-            )}
+            </div>
           </div>
 
-          {/* === RIGHT SIDE (mirror) === */}
-          <ConnectorLines count={1} reverse />
+          {/* ──────── RIGHT HALF (mirrored) ──────── */}
+
+          <ConnectorCol width={SF_CONN_W}>
+            <BracketConnector fromCount={1} width={SF_CONN_W} reverse />
+          </ConnectorCol>
+
+          {/* Semifinals Right (match 1) */}
           <RoundColumn
-            label="Semifinals" matchCount={1}
+            label="Semifinals" count={1}
             matches={sf.slice(1, 2)}
-            matchIds={['sf-1']}
+            roundKey="sf-r"
             onSelect={(i, t) => onAdvanceTeam('sf', i + 1, t)}
           />
-          <ConnectorLines count={1} reverse />
+          <ConnectorCol width={CONN_W}>
+            <BracketConnector fromCount={2} width={CONN_W} reverse />
+          </ConnectorCol>
+
+          {/* Quarterfinals Right (matches 2–3) */}
           <RoundColumn
-            label="Quarterfinals" matchCount={2}
+            label="Quarterfinals" count={2}
             matches={qf.slice(2, 4)}
-            matchIds={qf.slice(2, 4).map((_, i) => `qf-${i + 2}`)}
+            roundKey="qf-r"
             onSelect={(i, t) => onAdvanceTeam('qf', i + 2, t)}
           />
-          <ConnectorLines count={2} reverse />
+          <ConnectorCol width={CONN_W}>
+            <BracketConnector fromCount={4} width={CONN_W} reverse />
+          </ConnectorCol>
+
+          {/* R16 Right (matches 4–7) */}
           <RoundColumn
-            label="Round of 16" matchCount={4}
+            label="Round of 16" count={4}
             matches={r16.slice(4, 8)}
-            matchIds={r16.slice(4, 8).map((_, i) => `r16-${i + 4}`)}
+            roundKey="r16-r"
             onSelect={(i, t) => onAdvanceTeam('r16', i + 4, t)}
           />
-          <ConnectorLines count={4} reverse />
+          <ConnectorCol width={CONN_W}>
+            <BracketConnector fromCount={8} width={CONN_W} reverse />
+          </ConnectorCol>
+
+          {/* R32 Right (matches 8–15) */}
           <RoundColumn
-            label="Round of 32" matchCount={8}
+            label="Round of 32" count={8}
             matches={r32.slice(8, 16)}
-            matchIds={r32.slice(8, 16).map((_, i) => `r32-${i + 8}`)}
+            roundKey="r32-r"
             onSelect={(i, t) => onAdvanceTeam('r32', i + 8, t)}
           />
 

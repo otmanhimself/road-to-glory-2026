@@ -18,8 +18,8 @@ const GROUP_ORDER = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']
 
 export function ThirdPlaceSelection({ groups, selected, onToggle, onContinue }: ThirdPlaceSelectionProps) {
   // Extract ONLY the user's actual third-place picks, in fixed A→L order
-  const thirdPlaceTeams = GROUP_ORDER
-    .map(groupId => ({ groupId, team: groups[groupId]?.third ?? null }))
+  const thirdPlaceTeams: { groupId: string; team: string }[] = GROUP_ORDER
+    .map(groupId => ({ groupId: groupId as string, team: groups[groupId]?.third ?? null }))
     .filter((entry): entry is { groupId: string; team: string } => entry.team !== null);
 
   const count = selected.length;

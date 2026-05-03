@@ -10,9 +10,10 @@ interface MatchBoxProps {
   onSelect: (team: string) => void;
   isFinal?: boolean;
   label?: string;
+  width?: number;
 }
 
-export function MatchBox({ matchId, team1, team2, winner, onSelect, isFinal, label }: MatchBoxProps) {
+export function MatchBox({ matchId, team1, team2, winner, onSelect, isFinal, label, width }: MatchBoxProps) {
   const t1Win = winner === team1;
   const t2Win = winner === team2;
 
@@ -85,7 +86,7 @@ export function MatchBox({ matchId, team1, team2, winner, onSelect, isFinal, lab
     <div
       className="flex flex-col rounded-lg overflow-hidden z-10 relative"
       style={{
-        width: isFinal ? '180px' : '160px',
+        width: width ? `${width}px` : isFinal ? '172px' : '152px',
         background: 'rgba(255,255,255,0.03)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',

@@ -249,12 +249,21 @@ function RoadToGloryApp() {
             className="pb-24"
           >
             <div ref={bracketRef} className="bg-background pt-4 pb-4 px-2 min-w-max md:min-w-0">
-              {/* Hidden print header for image export */}
-              <div className="text-center mb-6 px-4" style={{ display: 'none' }} aria-hidden>
-                <h1 className="text-3xl font-black text-primary uppercase tracking-widest font-display">
+              {/* Print header — hidden normally, shown during image export */}
+              <div
+                data-print-header="true"
+                className="text-center mb-4 px-4 py-4"
+                style={{ display: 'none' }}
+              >
+                <h1
+                  className="font-black uppercase tracking-widest font-display"
+                  style={{ fontSize: 28, color: '#D4AF37' }}
+                >
                   Road to Glory 2026
                 </h1>
-                <p className="text-lg text-muted-foreground mt-1">@{state.username}'s Prediction</p>
+                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>
+                  @{state.username}&apos;s World Cup Prediction
+                </p>
               </div>
               <KnockoutBracket state={state} onAdvanceTeam={handleAdvanceTeam} />
             </div>
