@@ -116,6 +116,26 @@ function Countdown() {
   );
 }
 
+function playTheme() {
+  try {
+    const audio = new Audio('/worldcup-theme.mp3');
+    audio.loop = true;
+    audio.volume = 0;
+    audio.play().then(() => {
+      // Fade in over 2 seconds
+      let vol = 0;
+      const step = () => {
+        vol = Math.min(vol + 0.02, 0.55);
+        audio.volume = vol;
+        if (vol < 0.55) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+      // Store on window so other components can access/stop it
+      (window as any).__wcAudio = audio;
+    }).catch(() => {/* autoplay blocked — silent fail */});
+  } catch {/* ignore */}
+}
+
 export function UsernameEntry({ onStart, savedProgress, onResume, onStartFresh }: UsernameEntryProps) {
   const [username, setUsername] = useState('');
   const [showNewForm, setShowNewForm] = useState(!savedProgress);
@@ -123,8 +143,14 @@ export function UsernameEntry({ onStart, savedProgress, onResume, onStartFresh }
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (username.trim()) {
+      playTheme();
       onStart(username.trim());
     }
+  };
+
+  const handleResume = () => {
+    playTheme();
+    onResume?.();
   };
 
   const handleStartFreshClick = () => {
@@ -233,7 +259,7 @@ export function UsernameEntry({ onStart, savedProgress, onResume, onStartFresh }
 
               {/* Continue button */}
               <Button
-                onClick={onResume}
+                onClick={handleResume}
                 className="w-full h-14 sm:h-16 text-lg font-black rounded-xl uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2"
                 style={{
                   background: 'linear-gradient(135deg, #D4AF37 0%, #F0D060 50%, #D4AF37 100%)',
