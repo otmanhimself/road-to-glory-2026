@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -85,17 +85,43 @@ function StepIndicator({ phase }: { phase: 1 | 2 | 3 | 4 }) {
   );
 }
 
+const STORAGE_KEY = 'rtg2026-bracket-v1';
+
+const defaultState = (): BracketState => ({
+  username: "",
+  phase: 1,
+  groups: Object.keys(GROUPS).reduce((acc, groupId) => {
+    acc[groupId] = { first: null, second: null, third: null };
+    return acc;
+  }, {} as BracketState["groups"]),
+  selectedThirdPlace: [],
+  knockout: initialKnockoutState,
+});
+
+const loadSavedState = (): BracketState => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultState();
+    const parsed = JSON.parse(raw) as BracketState;
+    // Validate basic shape before trusting it
+    if (!parsed.phase || !parsed.groups || !parsed.knockout) return defaultState();
+    return parsed;
+  } catch {
+    return defaultState();
+  }
+};
+
 function RoadToGloryApp() {
-  const [state, setState] = useState<BracketState>({
-    username: "",
-    phase: 1,
-    groups: Object.keys(GROUPS).reduce((acc, groupId) => {
-      acc[groupId] = { first: null, second: null, third: null };
-      return acc;
-    }, {} as BracketState["groups"]),
-    selectedThirdPlace: [],
-    knockout: initialKnockoutState,
-  });
+  const [state, setState] = useState<BracketState>(loadSavedState);
+
+  // Persist every state change to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch {
+      // Storage quota exceeded or unavailable — silently ignore
+    }
+  }, [state]);
 
   const bracketRef = useRef<HTMLDivElement>(null);
 
@@ -191,12 +217,8 @@ function RoadToGloryApp() {
 
   const handleReset = () => {
     if (window.confirm("Start over? Your predictions will be lost.")) {
-      setState(prev => ({
-        ...prev,
-        phase: 2,
-        selectedThirdPlace: [],
-        knockout: initialKnockoutState,
-      }));
+      try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+      setState(defaultState());
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
