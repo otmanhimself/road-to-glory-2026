@@ -10,6 +10,7 @@ import { GroupStage } from "@/components/GroupStage";
 import { ThirdPlaceSelection } from "@/components/ThirdPlaceSelection";
 import { KnockoutBracket } from "@/components/KnockoutBracket";
 import { ShareButtons } from "@/components/ShareButtons";
+import { MuteButton } from "@/components/MuteButton";
 import { GROUPS } from "@/data/groups";
 import {
   BracketState,
@@ -297,6 +298,7 @@ function RoadToGloryApp() {
         }
       />
 
+      <MuteButton />
       <AnimatePresence mode="wait">
         {state.phase === 1 && (
           <motion.div key="phase-1" exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.25 }}>

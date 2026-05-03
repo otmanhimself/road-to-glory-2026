@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RotateCcw, ChevronRight } from 'lucide-react';
 import { useCountdown } from '@/hooks/useCountdown';
+import { playTheme } from '@/utils/audio';
 
 interface SavedProgress {
   username: string;
@@ -114,26 +115,6 @@ function Countdown() {
       </p>
     </motion.div>
   );
-}
-
-function playTheme() {
-  try {
-    const audio = new Audio('/worldcup-theme.mp3');
-    audio.loop = true;
-    audio.volume = 0;
-    audio.play().then(() => {
-      // Fade in over 2 seconds
-      let vol = 0;
-      const step = () => {
-        vol = Math.min(vol + 0.02, 0.55);
-        audio.volume = vol;
-        if (vol < 0.55) requestAnimationFrame(step);
-      };
-      requestAnimationFrame(step);
-      // Store on window so other components can access/stop it
-      (window as any).__wcAudio = audio;
-    }).catch(() => {/* autoplay blocked — silent fail */});
-  } catch {/* ignore */}
 }
 
 export function UsernameEntry({ onStart, savedProgress, onResume, onStartFresh }: UsernameEntryProps) {
