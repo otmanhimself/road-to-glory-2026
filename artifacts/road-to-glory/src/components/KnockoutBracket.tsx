@@ -396,7 +396,7 @@ export function KnockoutBracket({ state, onAdvanceTeam }: KnockoutBracketProps) 
       </div>
 
       {/* Cinematic champion reveal — full-width section below the bracket */}
-      <ChampionReveal champion={champion} />
+      <ChampionReveal champion={champion} knockout={state.knockout} />
 
     </div>
   );
