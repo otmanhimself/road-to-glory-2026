@@ -137,7 +137,7 @@ export function ChampionReveal({ champion, knockout, username = '' }: ChampionRe
               alt="World Cup Trophy"
               crossOrigin="anonymous"
               className="trophy-img-glow"
-              style={{ width: 150, height: 200, objectFit: 'contain' }}
+              style={{ width: 225, height: 300, objectFit: 'contain' }}
             />
           </motion.div>
 
