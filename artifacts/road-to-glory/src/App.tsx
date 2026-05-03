@@ -21,24 +21,54 @@ import {
 
 const queryClient = new QueryClient();
 
-const STEP_LABELS = ['', 'Group Stage', '3rd Place', 'Knockout'];
+function getProgressPct(
+  phase: number,
+  groupsDone: number,
+  thirdsDone: number,
+  knockoutDone: number,
+): number {
+  if (phase <= 1) return 0;
+  if (phase === 2) return (groupsDone / 12) * 33.33;
+  if (phase === 3) return 33.33 + (thirdsDone / 8) * 33.33;
+  // Phase 4: 31 total matches (16 r32 + 8 r16 + 4 qf + 2 sf + 1 final)
+  return 66.67 + Math.min(knockoutDone / 31, 1) * 33.33;
+}
 
-function StepIndicator({ phase }: { phase: 1 | 2 | 3 | 4 }) {
+interface StepIndicatorProps {
+  phase: 1 | 2 | 3 | 4;
+  groupsDone: number;
+  thirdsDone: number;
+  knockoutDone: number;
+}
+
+function StepIndicator({ phase, groupsDone, thirdsDone, knockoutDone }: StepIndicatorProps) {
   if (phase === 1) return null;
+
+  const pct = getProgressPct(phase, groupsDone, thirdsDone, knockoutDone);
+
   const steps = [
     { num: 1, label: 'Groups', phase: 2 },
     { num: 2, label: '3rd Place', phase: 3 },
     { num: 3, label: 'Knockout', phase: 4 },
   ];
+
+  // Sub-label shown on the active step
+  const subLabel = (() => {
+    if (phase === 2 && groupsDone > 0) return `${groupsDone}/12`;
+    if (phase === 3 && thirdsDone > 0) return `${thirdsDone}/8`;
+    if (phase === 4 && knockoutDone > 0) return `${knockoutDone}/31`;
+    return null;
+  })();
+
   return (
     <div className="fixed top-0 left-0 right-0 z-50">
-      {/* Progress bar */}
+      {/* Granular progress bar */}
       <div className="h-0.5 w-full" style={{ background: 'rgba(212,175,55,0.1)' }}>
         <motion.div
           className="h-full"
           style={{ background: 'linear-gradient(90deg, #D4AF37, #F0D060)' }}
-          animate={{ width: phase === 2 ? '33%' : phase === 3 ? '66%' : '100%' }}
-          transition={{ duration: 0.5 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
         />
       </div>
 
@@ -70,12 +100,24 @@ function StepIndicator({ phase }: { phase: 1 | 2 | 3 | 4 }) {
                 >
                   {isDone ? '✓' : step.num}
                 </div>
-                <span
-                  className="text-[11px] font-bold tracking-wide"
-                  style={{ color: isActive ? '#D4AF37' : isDone ? 'rgba(212,175,55,0.6)' : 'rgba(255,255,255,0.3)' }}
-                >
-                  {step.label}
-                </span>
+                <div className="flex flex-col items-start leading-none gap-0.5">
+                  <span
+                    className="text-[11px] font-bold tracking-wide"
+                    style={{ color: isActive ? '#D4AF37' : isDone ? 'rgba(212,175,55,0.6)' : 'rgba(255,255,255,0.3)' }}
+                  >
+                    {step.label}
+                  </span>
+                  {isActive && subLabel && (
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-[9px] font-semibold"
+                      style={{ color: 'rgba(212,175,55,0.45)' }}
+                    >
+                      {subLabel}
+                    </motion.span>
+                  )}
+                </div>
               </div>
             </div>
           );
@@ -245,7 +287,15 @@ function RoadToGloryApp() {
 
   return (
     <div className={`min-h-[100dvh] bg-background text-foreground overflow-x-hidden ${topPad}`}>
-      <StepIndicator phase={state.phase} />
+      <StepIndicator
+        phase={state.phase}
+        groupsDone={Object.values(state.groups).filter(g => g.first && g.second && g.third).length}
+        thirdsDone={state.selectedThirdPlace.length}
+        knockoutDone={
+          [...state.knockout.r32, ...state.knockout.r16, ...state.knockout.qf, ...state.knockout.sf]
+            .filter(m => m.winner).length + (state.knockout.champion ? 1 : 0)
+        }
+      />
 
       <AnimatePresence mode="wait">
         {state.phase === 1 && (

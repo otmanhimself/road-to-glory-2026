@@ -3,6 +3,7 @@ import { BracketState } from '@/utils/bracket';
 import { MatchBox } from './MatchBox';
 import { Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ChampionReveal } from './ChampionReveal';
 
 const SLOT_H = 96;
 const TOTAL_H = 8 * SLOT_H; // 768px — total height of bracket
@@ -218,8 +219,8 @@ export function KnockoutBracket({ state, onAdvanceTeam }: KnockoutBracketProps) 
 
       {/* Horizontally scrollable bracket */}
       <div
-        className="flex-1 overflow-x-auto overflow-y-visible pb-10"
-        style={{ paddingLeft: 12, paddingRight: 12 }}
+        className="flex-1 overflow-x-auto overflow-y-visible"
+        style={{ paddingLeft: 12, paddingRight: 12, paddingBottom: champion ? 0 : 40 }}
         data-bracket-scroll="true"
       >
         <div
@@ -392,6 +393,10 @@ export function KnockoutBracket({ state, onAdvanceTeam }: KnockoutBracketProps) 
 
         </div>
       </div>
+
+      {/* Cinematic champion reveal — full-width section below the bracket */}
+      <ChampionReveal champion={champion} />
+
     </div>
   );
 }
